@@ -25,7 +25,7 @@
 ## Features
 
 - **VS Code & Cursor** — Automatically opens files, scrolls to code, and highlights line ranges with a gold background decoration
-- **Kokoro TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon
+- **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon
 - **Three Modes** — Autoplay (hands-free), Interactive + TTS, or Interactive (text only)
 - **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 - **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
@@ -55,7 +55,7 @@ ln -s "$(pwd)/code-explainer" ~/.claude/skills/explainer
 ```
 
 The setup script handles:
-- Python venv creation with Kokoro TTS (mlx-audio)
+- Python venv creation with TTS engine (mlx-audio + sounddevice)
 - Extension build and installation (VS Code + Cursor)
 - Voice model download (~330 MB)
 - Script permissions
@@ -103,10 +103,10 @@ Code Explainer uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via 
 
 ```bash
 # Change voice
-export KOKORO_VOICE=am_adam    # American male
+export TTS_VOICE=am_adam    # American male
 
 # Change speed
-export KOKORO_SPEED=1.2        # 20% faster
+export TTS_SPEED=1.2        # 20% faster
 ```
 
 ### Available Voices
@@ -147,7 +147,8 @@ code-explainer/
 │   ├── highlight.sh          # Triggers VS Code highlighting
 │   ├── speak.sh              # TTS wrapper (Kokoro + say fallback)
 │   ├── present.sh            # Autoplay conductor
-│   └── kokoro_speak.py       # Kokoro TTS engine
+│   ├── tts_server.py          # TTS generation server
+│   └── tts_client.py          # TTS streaming client
 ├── vscode-extension/
 │   ├── package.json
 │   ├── tsconfig.json

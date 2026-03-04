@@ -2,20 +2,21 @@
 
 ## Engine
 
-TTS uses **Kokoro-82M** (via mlx-audio) -- #1 ranked open-source TTS, runs locally on Apple Silicon.
+TTS uses **Kokoro-82M** (via mlx-audio) by default -- #1 ranked open-source TTS, runs locally on Apple Silicon. The model is configurable via `TTS_MODEL` env var or user config.
 
-Uses a **persistent server** (`kokoro_server.py`) that loads the model once. First call takes ~5s (model load), subsequent calls are near-instant (<500ms generation).
+Uses a **persistent server** (`tts_server.py`) that loads the model once and streams audio chunks to the client. First call takes ~5s (model load), subsequent calls play audio within ~450ms (streaming).
 
-The server starts automatically on first TTS call and stays running in the background. Falls back to macOS `say` if Kokoro is not installed.
+The server starts automatically on first TTS call and stays running in the background. Falls back to macOS `say` if mlx-audio is not installed.
 
 ## Behavior
 
 - Speech is **non-blocking** -- Claude continues while audio plays (use `run_in_background: true` on the Bash call)
-- Previous speech is **auto-canceled** when a new segment starts (the script kills `afplay`/`say` before speaking)
+- Previous speech is **auto-canceled** when a new segment starts (the script kills the previous client process before speaking)
+- Audio is **streamed** -- playback starts as soon as the first sentence is generated, while remaining sentences generate in parallel
 
 ## Voices
 
-Default voice: `af_heart` (American English female) -- configurable via `KOKORO_VOICE` env var or user config.
+Default voice: `af_heart` (American English female) -- configurable via `TTS_VOICE` env var or user config.
 
 Available voices:
 | Voice | Description |
@@ -32,7 +33,7 @@ Naming convention: `a`=American, `b`=British, `f`=female, `m`=male.
 
 ## Speed
 
-Configurable via `KOKORO_SPEED` env var or user config (default 1.0).
+Configurable via `TTS_SPEED` env var or user config (default 1.0).
 
 | Speed | Use case |
 |-------|----------|
@@ -41,7 +42,7 @@ Configurable via `KOKORO_SPEED` env var or user config (default 1.0).
 | `1.5` | Fast, good for familiar code |
 | `2.0` | Very fast, skim mode |
 
-**Always pass the user's speed setting** from config to the TTS scripts via `KOKORO_SPEED` env var.
+**Always pass the user's speed setting** from config to the TTS scripts via `TTS_SPEED` env var.
 
 ## Formatting rules for spoken text
 

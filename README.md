@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="vscode-extension/media/icon.svg" width="120" height="120" alt="Code Explainer icon" />
+  <img src="vscode-extension/media/icon.png" width="120" height="120" alt="Code Explainer icon" />
 </p>
 
 <h1 align="center">Code Explainer</h1>

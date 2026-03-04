@@ -1,6 +1,6 @@
 # Step 5: Interactive Walkthrough
 
-**If Autoplay was chosen, use `docs/step5-autoplay.md` instead.**
+**If Autoplay was chosen, use `docs/autoplay.md` instead.**
 
 For each segment:
 

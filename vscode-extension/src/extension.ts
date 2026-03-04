@@ -65,12 +65,6 @@ function processHighlightFile(): void {
 
 // ── Main activation ──
 
-let abortTTS: (() => void) | undefined;
-
-// TTS settings — updated by webview messages
-let ttsVoice = "af_heart";
-let ttsSpeed = 1;
-
 function playHighlightChunk(
 	segment: Segment,
 	highlight: Highlight,
@@ -139,6 +133,11 @@ export function activate(context: vscode.ExtensionContext): void {
 	});
 
 	// ── Walkthrough events → sidebar + highlights ──
+
+	let abortTTS: (() => void) | undefined;
+	// TTS settings — updated by webview messages
+	let ttsVoice = "af_heart";
+	let ttsSpeed = 1;
 
 	let currentChunkAbort: (() => void) | undefined;
 	let highlightLoopGeneration = 0;

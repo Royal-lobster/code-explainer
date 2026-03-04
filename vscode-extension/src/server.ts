@@ -36,7 +36,10 @@ export class ExplainerServer {
 		this.walkthrough = walkthrough;
 		this.authToken = crypto.randomBytes(32).toString("hex");
 		this.httpServer = http.createServer(this.handleHttp.bind(this));
-		this.wss = new WebSocketServer({ server: this.httpServer });
+		this.wss = new WebSocketServer({
+			server: this.httpServer,
+			verifyClient: (info: { req: http.IncomingMessage }) => this.checkAuth(info.req),
+		});
 		this.wss.on("connection", this.handleWs.bind(this));
 	}
 

@@ -13,11 +13,11 @@ Complete these steps in order:
 
 0. **Parallel init** — Dispatch both in a **single response**:
    - **Sidebar check (Bash):** `PORT=$(cat ~/.claude-explainer-port 2>/dev/null) && TOKEN=$(cat ~/.claude-explainer-token 2>/dev/null) && curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:$PORT/api/health"` — `{"status":"ok"}` means sidebar is active. When active, **NEVER output walkthrough content as terminal text**; all output goes through sidebar HTTP API only.
-   - **Assess familiarity (AskUserQuestion):** Read `docs/step1-assess.md` and ask preferences.
+   - **Assess familiarity (AskUserQuestion):** Read `docs/assess.md` and ask preferences.
 
-1. **Scan codebase** — Read `docs/step2-scan.md`. Dispatch haiku sub-agent with depth level from step 0.
-2. **Build + present plan** — Read `docs/step3-plan.md`. Parse scan results into ordered segments, present to user, wait for approval.
-3. **Execute walkthrough** — Read the doc for chosen mode: `docs/step5-interactive.md`, `docs/step5-autoplay.md`, or `docs/step5-podcast.md`. All reference `docs/tts.md`.
+1. **Scan codebase** — Read `docs/scan.md`. Dispatch haiku sub-agent with depth level from step 0.
+2. **Build + present plan** — Read `docs/plan.md`. Parse scan results into ordered segments, present to user, wait for approval.
+3. **Execute walkthrough** — Read the doc for chosen mode: `docs/interactive.md`, `docs/autoplay.md`, or `docs/podcast.md`. All reference `docs/tts.md`.
 4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
 **First-time setup?** Read `docs/setup.md`.

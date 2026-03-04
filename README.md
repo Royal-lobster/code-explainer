@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icon.svg" width="120" height="120" alt="Code Explainer icon" />
+  <img src="vscode-extension/media/icon.svg" width="120" height="120" alt="Code Explainer icon" />
 </p>
 
 <h1 align="center">Code Explainer</h1>
@@ -218,8 +218,9 @@ code-explainer/
 │       ├── 🎯 highlight.ts          # Code highlighting
 │       ├── 🔊 tts-bridge.ts         # TTS audio streaming
 │       └── 📝 types.ts              # Message protocol types
-└── 📂 assets/
-    └── 🎨 icon.svg
+└── 📂 vscode-extension/
+    └── 📂 media/
+        └── 🎨 icon.svg
 ```
 
 ## 📄 License

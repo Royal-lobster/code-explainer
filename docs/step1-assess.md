@@ -21,7 +21,7 @@ Default to **Overview** if the user seems unfamiliar with the code.
 | **Interactive (text only)** | Step-by-step, text only. Claude highlights, explains in text, waits for "next". |
 | **Podcast** | Generates a single audio file of the entire walkthrough. Just listen. |
 
-Default to **Interactive (text only)** if the user doesn't answer.
+Default to **Autoplay** if the user doesn't answer.
 
 ## Question 3: "What narration speed?"
 

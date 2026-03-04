@@ -21,10 +21,13 @@ let gainNode = null;
 let nextPlayTime = 0;
 /** @type {AudioBufferSourceNode[]} */
 let activeSources = [];
-let playbackSpeed = 1.5;
+// Speed is handled by TTS server; Web Audio plays at 1x
 let volume = 0.8;
 let muted = false;
 let audioPlaying = false;
+
+/** @type {{base64: string, sampleRate: number}[]} */
+let pendingChunks = [];
 
 function ensureAudioContext() {
 	if (!audioCtx) {
@@ -34,12 +37,27 @@ function ensureAudioContext() {
 		gainNode.connect(audioCtx.destination);
 	}
 	if (audioCtx.state === "suspended") {
-		audioCtx.resume();
+		audioCtx.resume().then(() => {
+			// Flush any chunks that arrived while suspended
+			for (const chunk of pendingChunks) {
+				playAudioChunk(chunk.base64, chunk.sampleRate);
+			}
+			pendingChunks = [];
+		});
 	}
 }
 
+// Pre-warm AudioContext on first user interaction so it's ready when audio arrives
+document.addEventListener("click", () => ensureAudioContext(), { once: true });
+
 function playAudioChunk(base64Data, sampleRate) {
 	ensureAudioContext();
+
+	// If AudioContext is still suspended (no user gesture yet), queue the chunk
+	if (audioCtx.state === "suspended") {
+		pendingChunks.push({ base64: base64Data, sampleRate });
+		return;
+	}
 
 	const binary = atob(base64Data);
 	const bytes = new Uint8Array(binary.length);
@@ -53,13 +71,13 @@ function playAudioChunk(base64Data, sampleRate) {
 
 	const source = audioCtx.createBufferSource();
 	source.buffer = buffer;
-	source.playbackRate.value = playbackSpeed;
+	source.playbackRate.value = 1;
 	source.connect(gainNode);
 
 	const now = audioCtx.currentTime;
 	if (nextPlayTime < now) nextPlayTime = now;
 	source.start(nextPlayTime);
-	nextPlayTime += buffer.duration / playbackSpeed;
+	nextPlayTime += buffer.duration;
 
 	activeSources.push(source);
 	source.onended = () => {
@@ -75,6 +93,7 @@ function stopAudio() {
 		try { source.stop(); } catch {}
 	}
 	activeSources = [];
+	pendingChunks = [];
 	nextPlayTime = 0;
 	audioPlaying = false;
 }
@@ -253,12 +272,12 @@ document.getElementById("voice-select").addEventListener("change", (e) => {
 // Speed buttons
 document.querySelectorAll("#speed-buttons button").forEach((btn) => {
 	btn.addEventListener("click", () => {
-		playbackSpeed = parseFloat(btn.dataset.speed);
+		const speed = parseFloat(btn.dataset.speed);
 		document.querySelectorAll("#speed-buttons button").forEach((b) =>
 			b.classList.remove("active"),
 		);
 		btn.classList.add("active");
-		vscode.postMessage({ type: "speed_change", speed: playbackSpeed });
+		vscode.postMessage({ type: "speed_change", speed });
 	});
 });
 

@@ -52,6 +52,40 @@ function ensureAudioContext() {
 // Pre-warm AudioContext on first user interaction so it's ready when audio arrives
 document.addEventListener("click", () => ensureAudioContext(), { once: true });
 
+/**
+ * Check if AudioContext needs a user gesture and show an overlay if so.
+ * Returns true if audio is ready, false if we're waiting for a gesture.
+ */
+function needsAudioGesture() {
+	if (audioCtx && audioCtx.state === "running") return false;
+	// Try creating — will be suspended without a gesture
+	ensureAudioContext();
+	return !audioCtx || audioCtx.state !== "running";
+}
+
+function showAudioGateOverlay() {
+	if (document.getElementById("audio-gate-overlay")) return;
+
+	const overlay = document.createElement("div");
+	overlay.id = "audio-gate-overlay";
+	overlay.innerHTML = `<button id="audio-gate-btn">Click to enable audio</button>`;
+	document.getElementById("active-view").prepend(overlay);
+
+	document.getElementById("audio-gate-btn").addEventListener("click", () => {
+		ensureAudioContext(); // Called synchronously during user gesture
+		overlay.remove();
+		// Re-trigger current segment so TTS restarts with AudioContext now unlocked
+		if (state.currentSegment != null) {
+			vscode.postMessage({ type: "goto_segment", segmentId: state.currentSegment });
+		}
+	});
+}
+
+function removeAudioGateOverlay() {
+	const overlay = document.getElementById("audio-gate-overlay");
+	if (overlay) overlay.remove();
+}
+
 function playAudioChunk(base64Data, sampleRate) {
 	ensureAudioContext();
 
@@ -104,6 +138,13 @@ function onAudioEnd() {
 	// If using multi-highlights, the extension controls advancement.
 	// audio_end just means this chunk finished — don't auto-advance segments.
 	if (totalHighlights >= 1) {
+		audioPlaying = false;
+		return;
+	}
+
+	// If AudioContext is suspended (no user gesture yet), chunks are queued
+	// but nothing actually played — don't auto-advance.
+	if (!audioCtx || audioCtx.state === "suspended") {
 		audioPlaying = false;
 		return;
 	}
@@ -162,6 +203,13 @@ function render() {
 	idleView.style.display = "none";
 	activeView.style.display = "";
 	doneView.style.display = "none";
+
+	// If playing but AudioContext needs a user gesture, show the gate overlay
+	if (state.status === "playing" && needsAudioGesture()) {
+		showAudioGateOverlay();
+	} else {
+		removeAudioGateOverlay();
+	}
 
 	// Title
 	document.getElementById("walkthrough-title").textContent = state.title;
@@ -255,6 +303,7 @@ function simpleMarkdown(text) {
 // ── Event handlers ──
 
 document.getElementById("btn-play-pause").addEventListener("click", () => {
+	ensureAudioContext(); // Unlock AudioContext synchronously during user gesture
 	vscode.postMessage({ type: "play_pause" });
 });
 

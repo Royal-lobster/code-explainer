@@ -283,3 +283,26 @@ body {
 	margin-top: 8px;
 	opacity: 0.6;
 }
+
+/* ── Audio gate overlay ── */
+
+#audio-gate-overlay {
+	display: flex;
+	justify-content: center;
+	padding: 12px;
+	margin-bottom: 12px;
+}
+
+#audio-gate-btn {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	border: none;
+	border-radius: 6px;
+	padding: 8px 20px;
+	font-size: 0.95em;
+	cursor: pointer;
+}
+
+#audio-gate-btn:hover {
+	background: var(--vscode-button-hoverBackground);
+}

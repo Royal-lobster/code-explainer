@@ -1,37 +1,28 @@
 # Step 1: Assess Familiarity
 
-Ask the user using AskUserQuestion (combine into one question set):
+Ask via AskUserQuestion (all questions in one call):
 
-## Question 1: "What depth level do you want for this explanation?"
+## Question 1: Depth level
 
-| Level | Description | Segment style |
-|-------|-------------|---------------|
-| **Overview** | High-level architecture, how pieces connect, data flow | 40-80 line segments, skip implementation details, focus on structure |
-| **Detailed** | Line-by-line explanation, patterns, design decisions | 15-40 line segments, explain why code is written this way |
-| **Focused** | Answer a specific question about a specific part | Jump directly to relevant code, explain only what's asked |
+| Level | Description | Segments |
+|-------|-------------|----------|
+| **Overview** | High-level architecture, data flow, how pieces connect | 40-80 lines, 4-8 segments |
+| **Detailed** | Line-by-line, patterns, design decisions | 15-40 lines, 8-15 segments |
+| **Focused** | Answer a specific question about a specific part | 1-3 segments |
 
-Default to **Overview** if the user seems unfamiliar with the code.
+Default: **Overview**.
 
-## Question 2: "How do you want the walkthrough delivered?"
+## Question 2: Delivery mode
 
 | Mode | Description |
 |------|-------------|
-| **Autoplay** (recommended) | Highlights move through code automatically while narration plays in sync. Hands-free — just watch and listen. Say "pause" to stop. |
-| **Interactive + TTS** | Step-by-step with voice. The agent highlights, explains in text + voice, then waits for "next". You control the pace. |
-| **Interactive (text only)** | Step-by-step, text only. The agent highlights, explains in text, waits for "next". |
-| **Podcast** | Generates a single audio file of the entire walkthrough. Just listen. |
+| **Autoplay** (recommended) | Auto-advancing highlights + TTS narration. Hands-free. |
+| **Interactive + TTS** | Step-by-step with voice. Waits for "next" between segments. |
+| **Interactive (text only)** | Step-by-step, text only. Waits for "next". |
+| **Podcast** | Single audio file of entire walkthrough. |
 
-Default to **Autoplay** if the user doesn't answer.
+Default: **Autoplay**.
 
-## Question 3: "What narration speed?"
+## Question 3: Narration speed
 
-| Speed | Description |
-|-------|-------------|
-| **1x** (default) | Normal pace, good for unfamiliar code |
-| **1.25x** | Slightly faster |
-| **1.5x** | Fast, good for familiar code |
-| **2x** | Very fast, skim mode |
-
-Default to **1x**.
-
-Track all settings throughout the session.
+Options: **1x** (default), **1.25x**, **1.5x**, **2x**. See `docs/tts.md` for details.

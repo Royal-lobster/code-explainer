@@ -1,13 +1,13 @@
-# Step 2: Scan the Codebase (via sub-agent)
+# Step 2: Scan the Codebase
 
-**Dispatch a haiku sub-agent** to scan the codebase. This saves main conversation context for the walkthrough itself.
+Dispatch a haiku sub-agent to scan. This saves main context for the walkthrough.
 
-Use the Agent tool with these parameters:
+Agent tool parameters:
 - `subagent_type`: `Explore`
 - `model`: `haiku`
 - `description`: `Scan codebase for {feature}`
 
-## Prompt template for the sub-agent
+## Prompt template
 
 ```
 Scan this codebase to find all files relevant to "{feature}".
@@ -16,7 +16,6 @@ Scan this codebase to find all files relevant to "{feature}".
 2. Glob for file patterns in relevant directories
 3. Read entry points and key files to understand the flow
 4. Follow imports to discover related files
-5. Look for service classes, controllers, modules, types, and tests
 
 Return a structured result:
 - **Entry point**: the file/function where the feature starts
@@ -24,16 +23,15 @@ Return a structured result:
 - **Call chain**: what calls what (A -> B -> C)
 - **Walkthrough plan**: ordered list of segments, each as:
   {file_absolute_path}:{startLine}-{endLine} -- {brief description} [{complexity}]
-    Sub-highlights (2-5 per segment, split by logical boundaries):
-      - {startLine}-{endLine} -- {brief description of this sub-range}
+    Sub-highlights (2-5 per segment):
       - {startLine}-{endLine} -- {brief description of this sub-range}
 
-  Where {complexity} is one of:
-  - `[core]` — central logic, the "meat" of the feature. Explain thoroughly.
-  - `[wiring]` — boilerplate, config, module setup, DI registration. Breeze through.
+  {complexity} is one of:
+  - `[core]` — central logic. Explain thoroughly.
+  - `[wiring]` — boilerplate, config, DI. Breeze through.
   - `[supporting]` — helpers, utilities, types. Explain briefly.
 
-  Sub-highlights should split each segment into focused 5-15 line blocks at logical boundaries
+  Sub-highlights: focused 5-15 line blocks at logical boundaries
   (imports, function signatures, conditionals, return values, setup vs logic).
 
 Depth level: {overview|detailed|focused}
@@ -42,13 +40,7 @@ Segment sizing:
 - Detailed: 15-40 lines per segment, 8-15 segments total
 - Focused: 1-3 segments, only what's relevant
 
-Ordering: start with entry point, follow data/call flow, group related logic, end with utilities/types/config.
+Ordering: entry point first, follow data/call flow, group related logic, end with utilities/types/config.
 ```
 
-## Tips for the prompt
-
-- Include the feature name and any files the user mentioned or has open
-- Specify the depth level chosen in Step 1
-- If the user pointed to a specific file, tell the sub-agent to start there
-
-The sub-agent returns the walkthrough plan. You then present it in Step 3/4.
+Include the feature name, any files the user mentioned, and the depth level from step 1. If the user pointed to a specific file, tell the sub-agent to start there.

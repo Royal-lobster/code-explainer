@@ -1,53 +1,39 @@
 ---
 name: explainer
-description: "Use when the user asks to explain, walk through, or understand a feature, module, or code flow in the codebase. Triggers on phrases like 'explain', 'walk me through', 'how does X work', 'what does this code do'."
+description: "Use when the user asks to explain, walk through, or understand a feature, module, or code flow in the codebase. Triggers on 'explain', 'walk me through', 'how does X work', 'what does this code do'."
 ---
 
 # Code Explainer
 
-## Overview
-
-Interactive code walkthrough skill. Scans the codebase for a feature, builds a segment-by-segment plan, then walks the user through each segment -- highlighting code in VS Code and explaining it at their chosen depth level.
-
-## When to Use
-
-- User asks to "explain" or "walk me through" a feature
-- User wants to understand how a module, service, or flow works
-- User says "how does X work" about the codebase
-- User asks for a code walkthrough or tour
+Interactive code walkthrough. Scans the codebase for a feature, builds a segment plan, then walks through each segment — highlighting code in VS Code and explaining at their chosen depth.
 
 ## Checklist
 
-You MUST complete these steps in order:
+Complete these steps in order:
 
-0. **Check sidebar FIRST** — Run `cat ~/.claude-explainer-port` to get the port, then `cat ~/.claude-explainer-token` to get the auth token, then hit `curl -s -H "Authorization: Bearer <token>" http://localhost:<port>/api/health`. If it returns `{"status":"ok"}`, the sidebar is active. When the sidebar is active, **NEVER output walkthrough content as terminal text**. All explanations go exclusively through the sidebar HTTP API. Skip straight to scanning + building the plan JSON.
-1. **Assess familiarity** — Read `docs/step1-assess.md` and ask the user their preferences.
-2. **Scan the codebase** — Read `docs/step2-scan.md` for sub-agent dispatch instructions.
-3. **Build walkthrough plan** — Read `docs/step3-plan.md` for plan format and presentation.
-4. **Present plan** — (covered in `docs/step3-plan.md`)
-5. **Execute walkthrough** — Read `docs/step5-interactive.md` for interactive mode, `docs/step5-autoplay.md` for autoplay mode, or `docs/step5-podcast.md` for podcast mode. All reference `docs/tts.md` for TTS details.
-6. **Wrap up** — Summarize key takeaways:
-   - **Summary** — 3-5 bullet points of the key takeaways
-   - **Architecture note** — how this feature fits into the broader system
-   - **Offer next steps** — "Want me to dive deeper into any part, or explain a related feature?"
+0. **Parallel init** — Dispatch both in a **single response**:
+   - **Sidebar check (Bash):** `PORT=$(cat ~/.claude-explainer-port 2>/dev/null) && TOKEN=$(cat ~/.claude-explainer-token 2>/dev/null) && curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:$PORT/api/health"` — `{"status":"ok"}` means sidebar is active. When active, **NEVER output walkthrough content as terminal text**; all output goes through sidebar HTTP API only.
+   - **Assess familiarity (AskUserQuestion):** Read `docs/step1-assess.md` and ask preferences.
 
-**First-time setup?** Read `docs/setup.md` for installation instructions.
+1. **Scan codebase** — Read `docs/step2-scan.md`. Dispatch haiku sub-agent with depth level from step 0.
+2. **Build + present plan** — Read `docs/step3-plan.md`. Parse scan results into ordered segments, present to user, wait for approval.
+3. **Execute walkthrough** — Read the doc for chosen mode: `docs/step5-interactive.md`, `docs/step5-autoplay.md`, or `docs/step5-podcast.md`. All reference `docs/tts.md`.
+4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
+
+**First-time setup?** Read `docs/setup.md`.
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
-| Explaining too much at once | Stick to segment boundaries, keep explanations concise |
-| Not connecting segments | Always include a context line linking to previous segment |
-| Forgetting to highlight | In sidebar mode, highlights are automatic. In fallback mode, write to `~/.claude-highlight.json` |
-| Reading the entire file | Use offset+limit on Read to show only the segment |
-| Not waiting for user | Always pause after each segment for questions |
-| Segments too large | Overview: max 80 lines. Detailed: max 40 lines. Split if bigger |
-| Missing ttsText in segments | If TTS is enabled, include `ttsText` field in every segment — the sidebar handles playback |
-| Speaking markdown formatting | Strip all backticks, bold markers, line refs from spoken text |
-| Explaining obvious code | Standard loops, imports, null checks — skip them or say "this is standard X" and move on |
-| Missing the "why" | Always explain intent before mechanism — what problem does this code solve? |
-| Ignoring complexity tags | Use `[core]`/`[wiring]`/`[supporting]` from the plan to calibrate explanation depth |
-| Not checking for sidebar | Check if `~/.claude-explainer-port` exists to determine sidebar vs fallback mode |
-| Dumping text before sidebar | Check sidebar port in step 0 BEFORE any text output. If sidebar is active, send plan JSON only — no terminal text |
-| Sub-highlights too broad | Each sub-highlight must be 5-15 lines focused on key code, NOT a partition of the full segment. Target 30-60% line coverage, not 80%+ |
+| Scope too large | Stick to segment boundaries. Overview: max 80 lines, Detailed: max 40. Split if bigger |
+| Not connecting segments | Include a context line linking to previous segment |
+| Forgetting to highlight | Sidebar: automatic. Fallback: write to `~/.claude-highlight.json` |
+| Reading entire file | Use offset+limit on Read for just the segment |
+| Not waiting for user | Pause after each segment for questions |
+| ttsText missing or has markdown | Include plain `ttsText` in every segment — strip backticks, bold, line refs from spoken text |
+| Explaining obvious code, missing the "why" | Skip standard patterns (loops, imports, null checks). Always explain intent before mechanism |
+| Ignoring complexity tags | `[core]` = thorough, `[wiring]` = breeze through, `[supporting]` = brief |
+| Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
+| Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
+| Sub-highlights too broad | 5-15 lines each, target 30-60% coverage of segment, not a partition of the full range |

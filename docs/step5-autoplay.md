@@ -1,22 +1,12 @@
-# Step 5-autoplay: Autoplay Mode (Sidebar Streaming)
+# Step 5: Autoplay Mode
 
-In autoplay mode, the walkthrough plays automatically in the VS Code sidebar -- highlights move through the code while TTS narration plays in sync. The user watches and listens via the sidebar webview.
+Sidebar-driven playback. Send the walkthrough plan to the sidebar extension which handles highlighting, TTS streaming, and auto-advancing.
 
-**Key design: sidebar-driven playback.** Send the walkthrough plan to the VS Code sidebar extension via HTTP, which handles highlighting, TTS audio streaming, and auto-advancing through segments autonomously.
+**Prerequisite:** Sidebar status already determined in step 0 (parallel init).
 
-## How it works
+## Steps
 
-1. **Check if the sidebar extension is available:**
-
-```bash
-if [ -f ~/.claude-explainer-port ]; then
-    # Sidebar extension is running — use HTTP API
-else
-    # Fall back to file-watcher protocol (see legacy section below)
-fi
-```
-
-2. **Build the walkthrough plan as a JSON object:**
+1. **Build the plan JSON:**
 
 ```json
 {
@@ -41,9 +31,7 @@ fi
 }
 ```
 
-3. **Send the plan to the extension:**
-
-Write the JSON to a temp file and send via the helper script:
+2. **Send to sidebar:**
 
 ```bash
 cat > /tmp/walkthrough-plan.json << 'EOF'
@@ -52,90 +40,48 @@ EOF
 ~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
 
-The sidebar immediately begins playback — highlighting code, showing explanations, and streaming TTS audio.
+Playback starts immediately.
 
-4. **Wait for user actions (optional):**
+3. **Handle user actions (optional):**
 
 ```bash
 ~/.claude/skills/explainer/scripts/explainer.sh wait-action 60
 ```
 
-This long-polls for user interactions (Go Deeper, Zoom Out). When the user clicks one, you receive a JSON response:
-
-```json
-{"type": "user_action", "action": "go_deeper", "segmentId": 3}
-```
-
-Handle by sending plan mutations:
+Returns e.g. `{"type": "user_action", "action": "go_deeper", "segmentId": 3}`. Handle with:
 
 ```bash
-# Insert deeper sub-segments after the current one
 ~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "insert_after", "afterSegment": 3, "segments": [...]}'
-
-# Resume playback
 ~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "resume"}'
 ```
 
-5. **Check state anytime:**
+4. **Other commands:** `explainer.sh state` (check state), `explainer.sh stop` (stop walkthrough).
 
-```bash
-~/.claude/skills/explainer/scripts/explainer.sh state
-```
+## Segment guidelines
 
-6. **Stop the walkthrough:**
-
-```bash
-~/.claude/skills/explainer/scripts/explainer.sh stop
-```
-
-## Segment generation guidelines
-
-- Each segment should be 20-80 lines of code (the outer range)
-- `explanation` field supports simple markdown (bold, inline code)
-- `ttsText` field must be plain text — no markdown, no line references, no file paths
-- TTS text should be 2-4 sentences, conversational style
-- The sidebar auto-advances after each segment's TTS finishes
+- 20-80 lines per segment
+- `explanation`: supports markdown. `ttsText`: plain text only, no markdown/line refs/paths
+- TTS: 2-4 sentences, conversational
 
 ### Sub-highlights
 
-Sub-highlights provide granular, line-by-line narration within a segment — the editor scrolls through each sub-range while its TTS chunk plays.
+Required for segments > 30 lines. Optional for smaller. Skip for < 10 lines.
 
-**When to include `highlights`:**
-- **Required** for segments longer than 30 lines — these are too large to highlight as a single block
-- **Optional** for smaller segments — use them to call out an important line or logical boundary
-- **Skip** for very small segments (< 10 lines) where a single highlight is sufficient
+- 2-5 sub-ranges per segment, each **5-15 lines** at logical boundaries
+- Each has own `ttsText` (1-2 sentences)
+- **Not a partition** — zoom into key code, target 30-60% line coverage
+- Minimum 3 highlights for segments > 40 lines
 
-**Rules:**
-- 2-5 sub-ranges per segment, each a focused block of **5-15 lines**
-- Each highlight has its own `ttsText` (1-2 sentences) for that specific sub-range
-- Highlights advance sequentially — the editor highlights each sub-range while TTS plays its chunk
-- Split by logical boundaries: imports, function signature, conditionals/branches, return values, setup vs logic
-- The segment-level `ttsText` is used as fallback when `highlights` is omitted
-- Sub-highlight ranges must be within the segment's `start`-`end` range and should not overlap
-- **ANTI-PATTERN: highlights that mirror the segment.** If a segment is lines 1-56, don't create 3 highlights of 1-17, 19-36, 42-53 — that's just slicing the segment into thirds. Instead, zoom into the 5-15 most important lines within each logical block. Highlights should feel like a magnifying glass on key code, NOT a partition of the segment.
-- **Target coverage: 30-60% of the segment's lines.** Highlights should skip boilerplate, blank lines, and obvious code. If you're covering >80% of the segment's lines across all highlights, your highlights are too broad.
-- **Minimum 3 highlights for segments > 40 lines.** Large segments need more granular narration to keep the viewer engaged.
+## Narration style
 
-## Autoplay narration style
+- Speak as a live code tour to a colleague, not "line 1 through 8 of file.ts"
+- Connect segments: "Moving down..." / "Next up..." / "This feeds into..."
+- Lead with **WHY** before HOW
+- Ground in concrete scenarios: "When a user places an order, this is what runs"
+- `[wiring]`: breeze through. `[core]`: detail. Vary pacing.
 
-- Speak as if giving a live code tour to a colleague
-- "Here we have the module definition..." not "This is line 1 through 8 of matching.module.ts"
-- Connect segments: "Moving down, we see..." / "Next up is..." / "This feeds into..."
-- **Lead with WHY before HOW**: "The system needs to validate prices before matching — here's how it does that"
-- **Ground in concrete scenarios**: "When a user places a market order, this is the code that runs"
-- **Breeze through boilerplate**: For `[wiring]` segments: "This is standard module setup — the interesting part is coming up next"
-- **Vary pacing**: More detail on `[core]` sub-blocks. Speed through obvious patterns.
+## User controls
 
-## User controls during autoplay
+The sidebar handles Play/Pause, Next/Prev, Go Deeper, Zoom Out, speed, volume, voice, and outline navigation. The agent only needs to respond to `wait-action` events.
 
-The sidebar provides built-in controls:
-- **Play/Pause button** — pauses TTS and highlighting
-- **Next/Previous buttons** — skip between segments
-- **Go Deeper** — pauses and sends a user_action for the agent to generate sub-segments
-- **Zoom Out** — pauses and sends a user_action for the agent to provide higher-level view
-- **Speed buttons** — 1x, 1.25x, 1.5x, 2x TTS playback speed
-- **Volume slider + Mute** — audio control
-- **Voice selector** — choose TTS voice
-- **Outline** — click any segment to jump to it
-
-See `docs/tts.md` for voice configuration and formatting rules.
+See `docs/tts.md` for voice config.

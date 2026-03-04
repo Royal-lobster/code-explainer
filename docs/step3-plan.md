@@ -1,22 +1,14 @@
-# Steps 3 & 4: Build Walkthrough Plan + Present Plan
+# Step 3: Build + Present Plan
 
-## Step 3: Build Walkthrough Plan
-
-Parse the sub-agent's response into an ordered list of segments. Each segment is:
+Parse the sub-agent's response into ordered segments:
 
 ```
 {number}. {file}:{startLine}-{endLine} -- {brief description} [{complexity}]
 ```
 
-**Verify the plan:**
-- Segments are ordered by data/call flow (entry point first)
-- No segment exceeds the size limit for the chosen depth
-- Absolute file paths are used
-- Adjust or split segments if needed
+**Verify:** segments ordered by call flow, within size limits for chosen depth, absolute paths used. Split if needed.
 
-## Step 4: Present Plan
-
-Show the plan to the user in a numbered list:
+**Present to user:**
 
 ```
 I'll walk through {feature} in {N} segments:
@@ -30,4 +22,4 @@ I'll walk through {feature} in {N} segments:
 Ready to start? You can reorder, skip, or add segments.
 ```
 
-Wait for the user to approve, adjust, or say "go".
+Wait for user to approve, adjust, or say "go".

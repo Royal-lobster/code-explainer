@@ -1,10 +1,11 @@
 import { EventEmitter } from "events";
-import type { Segment, WalkthroughStatus } from "./types";
+import type { Segment, Highlight, WalkthroughStatus } from "./types";
 
 export interface WalkthroughState {
 	title: string;
 	segments: Segment[];
 	currentIndex: number;
+	currentHighlightIndex: number;
 	status: WalkthroughStatus;
 }
 
@@ -21,6 +22,7 @@ export class Walkthrough extends EventEmitter {
 		title: "",
 		segments: [],
 		currentIndex: -1,
+		currentHighlightIndex: 0,
 		status: "idle",
 	};
 
@@ -80,6 +82,7 @@ export class Walkthrough extends EventEmitter {
 			return false;
 		}
 		this.state.currentIndex = nextIdx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[nextIdx]);
@@ -90,6 +93,7 @@ export class Walkthrough extends EventEmitter {
 		const prevIdx = this.state.currentIndex - 1;
 		if (prevIdx < 0) return false;
 		this.state.currentIndex = prevIdx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[prevIdx]);
@@ -100,10 +104,41 @@ export class Walkthrough extends EventEmitter {
 		const idx = this.state.segments.findIndex((s) => s.id === segmentId);
 		if (idx === -1) return false;
 		this.state.currentIndex = idx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[idx]);
 		return true;
+	}
+
+	// ── Highlight navigation ──
+
+	getCurrentHighlight(): Highlight | undefined {
+		const segment = this.getCurrentSegment();
+		if (!segment?.highlights?.length) return undefined;
+		return segment.highlights[this.state.currentHighlightIndex];
+	}
+
+	nextHighlight(): boolean {
+		const segment = this.getCurrentSegment();
+		if (!segment?.highlights?.length) return false;
+
+		const nextIdx = this.state.currentHighlightIndex + 1;
+		if (nextIdx >= segment.highlights.length) {
+			return false;
+		}
+
+		this.state.currentHighlightIndex = nextIdx;
+		this.emit("highlight", {
+			segment,
+			highlightIndex: nextIdx,
+			highlight: segment.highlights[nextIdx],
+		});
+		return true;
+	}
+
+	resetHighlightIndex(): void {
+		this.state.currentHighlightIndex = 0;
 	}
 
 	// ── Plan mutations ──

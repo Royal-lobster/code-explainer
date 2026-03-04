@@ -68,7 +68,12 @@ function showAudioGateOverlay() {
 
 	const overlay = document.createElement("div");
 	overlay.id = "audio-gate-overlay";
-	overlay.innerHTML = `<button id="audio-gate-btn">Click to enable audio</button>`;
+	overlay.innerHTML = `
+		<button id="audio-gate-btn" title="Click to start audio playback">
+			<span class="play-icon">&#9654;</span>
+		</button>
+		<span class="audio-gate-hint">Click play to start audio</span>
+	`;
 	document.getElementById("active-view").prepend(overlay);
 
 	document.getElementById("audio-gate-btn").addEventListener("click", () => {
@@ -317,6 +322,10 @@ document.getElementById("btn-prev").addEventListener("click", () => {
 
 document.getElementById("btn-deeper").addEventListener("click", () => {
 	vscode.postMessage({ type: "go_deeper" });
+});
+
+document.getElementById("btn-restart").addEventListener("click", () => {
+	vscode.postMessage({ type: "restart" });
 });
 
 document.getElementById("btn-zoom-out").addEventListener("click", () => {

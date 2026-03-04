@@ -165,6 +165,10 @@ export interface WebviewMuteToggleMessage {
 	type: "mute_toggle";
 }
 
+export interface WebviewRestartMessage {
+	type: "restart";
+}
+
 export type FromWebviewMessage =
 	| WebviewPlayPauseMessage
 	| WebviewNextMessage
@@ -175,4 +179,5 @@ export type FromWebviewMessage =
 	| WebviewSpeedChangeMessage
 	| WebviewVolumeChangeMessage
 	| WebviewVoiceChangeMessage
-	| WebviewMuteToggleMessage;
+	| WebviewMuteToggleMessage
+	| WebviewRestartMessage;

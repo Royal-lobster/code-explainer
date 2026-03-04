@@ -248,6 +248,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		switch (msg.type) {
 			case "set_plan":
 				walkthrough.setPlan(msg.title, msg.segments);
+				sidebar.reveal();
 				break;
 			case "insert_after":
 				walkthrough.insertAfter(msg.afterSegment, msg.segments);
@@ -339,6 +340,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			case "mute_toggle":
 				// Mute is handled in webview's Web Audio GainNode
 				break;
+			case "restart": {
+				const segments = walkthrough.getState().segments;
+				if (segments.length > 0) {
+					walkthrough.goto(segments[0].id);
+				}
+				break;
+			}
 		}
 	});
 

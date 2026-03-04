@@ -33,6 +33,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
+	/** Reveal and focus the sidebar panel */
+	reveal(): void {
+		if (this.view) {
+			this.view.show?.(true);
+		} else {
+			// If webview isn't resolved yet, open the sidebar view
+			vscode.commands.executeCommand("codeExplainer.sidebar.focus");
+		}
+	}
+
 	/** Send a message to the webview */
 	postMessage(msg: ToWebviewMessage): void {
 		this.view?.webview.postMessage(msg);
@@ -161,8 +171,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 	</div>
 
 	<div id="done-view" style="display:none;">
-		<p class="done-text">Walkthrough complete</p>
-		<p id="done-summary" class="done-summary"></p>
+		<div class="done-card">
+			<p class="done-text">Walkthrough complete</p>
+			<p id="done-summary" class="done-summary"></p>
+			<p class="done-hint">Have more questions? Ask your coding agent!</p>
+			<button id="btn-restart" class="done-restart-btn">Restart Walkthrough</button>
+		</div>
 	</div>
 
 	<script nonce="${nonce}" src="${scriptUri}"></script>

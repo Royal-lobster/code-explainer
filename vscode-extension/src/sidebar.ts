@@ -131,15 +131,23 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		</div>
 
 		<div class="now-playing">
+			<div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
 			<span id="segment-counter" class="counter"></span>
 			<span id="segment-title" class="seg-title"></span>
 			<a id="segment-location" class="seg-location" href="#"></a>
 		</div>
 
 		<div class="controls">
-			<button id="btn-prev" title="Previous segment">&#9198;</button>
-			<button id="btn-play-pause" title="Play/Pause">&#9208;</button>
-			<button id="btn-next" title="Next segment">&#9197;</button>
+			<button id="btn-prev" title="Previous segment">
+				<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h2v10H3V3zm10 0L7 8l6 5V3z"/></svg>
+			</button>
+			<button id="btn-play-pause" class="play-btn" title="Play/Pause">
+				<svg class="icon-play" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
+				<svg class="icon-pause" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M3 2h4v12H3V2zm6 0h4v12H9V2z"/></svg>
+			</button>
+			<button id="btn-next" title="Next segment">
+				<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 3h2v10h-2V3zM3 3l6 5-6 5V3z"/></svg>
+			</button>
 		</div>
 
 		<div class="audio-controls">

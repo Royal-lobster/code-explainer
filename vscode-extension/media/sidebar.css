@@ -36,10 +36,11 @@ body {
 /* ── Header ── */
 
 .header h2 {
-	font-size: 1.1em;
+	font-size: 1.2em;
 	font-weight: 600;
-	margin-bottom: 12px;
+	margin-bottom: 14px;
 	color: var(--vscode-foreground);
+	letter-spacing: -0.01em;
 }
 
 /* ── Now playing ── */
@@ -49,7 +50,28 @@ body {
 	border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
 	padding: 10px 12px;
-	margin-bottom: 12px;
+	margin-bottom: 16px;
+	position: relative;
+	overflow: hidden;
+}
+
+/* ── Progress bar ── */
+
+.progress-bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: var(--vscode-panel-border);
+}
+
+.progress-fill {
+	height: 100%;
+	background: var(--vscode-progressBar-background);
+	transition: width 0.4s ease;
+	width: 0%;
+	border-radius: 0 2px 2px 0;
 }
 
 .counter {
@@ -59,7 +81,7 @@ body {
 }
 
 .seg-title {
-	font-weight: 600;
+	font-weight: 700;
 }
 
 .seg-location {
@@ -80,8 +102,9 @@ body {
 .controls {
 	display: flex;
 	justify-content: center;
-	gap: 8px;
-	margin-bottom: 12px;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
 }
 
 .controls button {
@@ -96,35 +119,57 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .controls button:hover {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* ── Play button pulse animation ── */
+.controls button:active {
+	transform: scale(0.95);
+}
+
+/* ── Play button (circular) ── */
+
+.controls .play-btn {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	box-shadow: 0 0 0 0 var(--vscode-button-background);
+	transition: background 0.15s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.controls .play-btn:hover {
+	background: var(--vscode-button-hoverBackground);
+	box-shadow: 0 0 12px 2px color-mix(in srgb, var(--vscode-button-background) 40%, transparent);
+}
+
+.controls .play-btn:active {
+	transform: scale(0.92);
+}
+
+/* ── Play button pulse animation (glow pulse) ── */
 
 @keyframes play-pulse {
 	0%, 100% {
-		opacity: 1;
-		transform: scale(1);
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--vscode-button-background) 50%, transparent);
 	}
 	50% {
-		opacity: 0.7;
-		transform: scale(1.1);
+		box-shadow: 0 0 16px 4px color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
 	}
 }
 
 #btn-play-pause.pulse {
-	background: var(--vscode-button-background);
-	color: var(--vscode-button-foreground);
-	animation: play-pulse 1.5s ease-in-out infinite;
+	animation: play-pulse 2s ease-in-out infinite;
 }
 
 /* ── Audio controls ── */
 
 .audio-controls {
-	margin-bottom: 12px;
+	margin-bottom: 16px;
 }
 
 .control-row {
@@ -164,6 +209,7 @@ body {
 	font-size: 1em;
 	padding: 2px;
 	opacity: 0.7;
+	transition: opacity 0.15s ease;
 }
 
 #btn-mute:hover {
@@ -187,6 +233,7 @@ body {
 	padding: 3px 6px;
 	font-size: 0.8em;
 	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
 }
 
 .speed-buttons button:hover {
@@ -205,7 +252,7 @@ body {
 	border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
 	padding: 12px;
-	margin-bottom: 12px;
+	margin-bottom: 16px;
 	max-height: 200px;
 	overflow-y: auto;
 }
@@ -213,6 +260,11 @@ body {
 .explanation-text {
 	font-size: 0.9em;
 	line-height: 1.5;
+	transition: opacity 0.15s ease;
+}
+
+.explanation-text.fade-out {
+	opacity: 0;
 }
 
 .explanation-text code {
@@ -235,15 +287,17 @@ body {
 	flex: 1;
 	background: var(--vscode-button-secondaryBackground);
 	color: var(--vscode-button-secondaryForeground);
-	border: none;
+	border: 1px solid transparent;
 	border-radius: 4px;
 	padding: 6px 10px;
 	font-size: 0.85em;
 	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .action-buttons button:hover {
 	background: var(--vscode-button-secondaryHoverBackground);
+	border-color: var(--vscode-panel-border);
 }
 
 /* ── Outline ── */
@@ -260,13 +314,15 @@ body {
 }
 
 .outline li {
-	padding: 4px 8px;
+	padding: 5px 8px;
 	border-radius: 4px;
 	cursor: pointer;
 	font-size: 0.85em;
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	border-left: 3px solid transparent;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .outline li:hover {
@@ -274,8 +330,9 @@ body {
 }
 
 .outline li.current {
-	background: var(--vscode-list-activeSelectionBackground);
+	background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 40%, transparent);
 	color: var(--vscode-list-activeSelectionForeground);
+	border-left-color: var(--vscode-focusBorder);
 }
 
 .outline li.completed {
@@ -320,9 +377,9 @@ body {
 	padding: 8px 20px;
 	font-size: 0.9em;
 	cursor: pointer;
+	transition: background 0.15s ease;
 }
 
 .done-restart-btn:hover {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
-

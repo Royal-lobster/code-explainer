@@ -29,6 +29,8 @@ let currentHighlightIndex = 0;
 let totalHighlights = 0;
 /** True while waiting for the first highlight_advance after a segment change */
 let awaitingHighlightAdvance = false;
+/** True when audio_end arrived but chunks are still pending (AudioContext suspended) */
+let deferredPlaybackComplete = false;
 
 /** @type {{base64: string, sampleRate: number}[]} */
 let pendingChunks = [];
@@ -43,10 +45,16 @@ function ensureAudioContext() {
 	if (audioCtx.state === "suspended") {
 		audioCtx.resume().then(() => {
 			// Flush any chunks that arrived while suspended
-			for (const chunk of pendingChunks) {
+			const chunks = pendingChunks.slice();
+			pendingChunks = [];
+			for (const chunk of chunks) {
 				playAudioChunk(chunk.base64, chunk.sampleRate);
 			}
-			pendingChunks = [];
+			// If audio_end arrived while suspended, now handle deferred playback completion
+			if (deferredPlaybackComplete) {
+				deferredPlaybackComplete = false;
+				waitForActiveSourcesToFinish();
+			}
 		});
 	}
 }
@@ -101,24 +109,38 @@ function stopAudio() {
 	pendingChunks = [];
 	nextPlayTime = 0;
 	audioPlaying = false;
+	deferredPlaybackComplete = false;
+}
+
+/**
+ * Wait for all active audio sources to finish, then send playback_complete.
+ * If no sources are active (already drained), sends immediately.
+ */
+function waitForActiveSourcesToFinish() {
+	if (activeSources.length === 0) {
+		audioPlaying = false;
+		vscode.postMessage({ type: "playback_complete" });
+		return;
+	}
+	const lastSource = activeSources[activeSources.length - 1];
+	const originalOnEnded = lastSource.onended;
+	lastSource.onended = (e) => {
+		if (originalOnEnded) originalOnEnded.call(lastSource, e);
+		audioPlaying = false;
+		vscode.postMessage({ type: "playback_complete" });
+	};
 }
 
 function onAudioEnd() {
 	// Multi-highlight mode: wait for actual Web Audio playback to finish,
 	// then signal the extension so it can advance to the next sub-highlight.
 	if (totalHighlights >= 1) {
-		if (activeSources.length === 0) {
-			audioPlaying = false;
-			vscode.postMessage({ type: "playback_complete" });
+		// If chunks are still pending (AudioContext suspended), defer until they're flushed
+		if (pendingChunks.length > 0) {
+			deferredPlaybackComplete = true;
 			return;
 		}
-		const lastSource = activeSources[activeSources.length - 1];
-		const originalOnEnded = lastSource.onended;
-		lastSource.onended = (e) => {
-			if (originalOnEnded) originalOnEnded.call(lastSource, e);
-			audioPlaying = false;
-			vscode.postMessage({ type: "playback_complete" });
-		};
+		waitForActiveSourcesToFinish();
 		return;
 	}
 
@@ -219,9 +241,17 @@ function render() {
 		loc.dataset.end = String(seg.end);
 	}
 
-	// Play/pause button
+	// Play/pause button (SVG icon toggle)
 	const playBtn = document.getElementById("btn-play-pause");
-	playBtn.textContent = state.status === "playing" ? "\u23F8" : "\u25B6";
+	const iconPlay = playBtn.querySelector(".icon-play");
+	const iconPause = playBtn.querySelector(".icon-pause");
+	if (state.status === "playing") {
+		iconPlay.style.display = "none";
+		iconPause.style.display = "";
+	} else {
+		iconPlay.style.display = "";
+		iconPause.style.display = "none";
+	}
 	playBtn.title = state.status === "playing" ? "Pause" : "Play";
 
 	// Pulse animation when paused (ready to play)
@@ -231,9 +261,21 @@ function render() {
 		playBtn.classList.remove("pulse");
 	}
 
-	// Explanation
+	// Progress bar
+	const progressFill = document.getElementById("progress-fill");
+	if (progressFill && state.segments.length > 0) {
+		const pct = ((idx + 1) / state.segments.length) * 100;
+		progressFill.style.width = `${pct}%`;
+	}
+
+	// Explanation with fade transition
 	if (seg) {
-		document.getElementById("explanation-text").innerHTML = simpleMarkdown(seg.explanation);
+		const explEl = document.getElementById("explanation-text");
+		explEl.classList.add("fade-out");
+		setTimeout(() => {
+			explEl.innerHTML = simpleMarkdown(seg.explanation);
+			explEl.classList.remove("fade-out");
+		}, 150);
 	}
 
 	// Outline

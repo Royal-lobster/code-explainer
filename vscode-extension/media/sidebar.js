@@ -140,10 +140,21 @@ function stopAudio() {
 }
 
 function onAudioEnd() {
-	// If using multi-highlights, the extension controls advancement.
-	// audio_end just means this chunk finished — don't auto-advance segments.
+	// Multi-highlight mode: wait for actual Web Audio playback to finish,
+	// then signal the extension so it can advance to the next sub-highlight.
 	if (totalHighlights >= 1) {
-		audioPlaying = false;
+		if (activeSources.length === 0) {
+			audioPlaying = false;
+			vscode.postMessage({ type: "playback_complete" });
+			return;
+		}
+		const lastSource = activeSources[activeSources.length - 1];
+		const originalOnEnded = lastSource.onended;
+		lastSource.onended = (e) => {
+			if (originalOnEnded) originalOnEnded.call(lastSource, e);
+			audioPlaying = false;
+			vscode.postMessage({ type: "playback_complete" });
+		};
 		return;
 	}
 

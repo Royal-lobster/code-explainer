@@ -83,6 +83,10 @@ function playHighlightChunk(
 		highlightSubRange(segment.file, highlight.start, highlight.end).catch(() => {});
 
 		if (highlight.ttsText && isTTSAvailable()) {
+			// Wait for the webview to signal actual playback completion,
+			// not just the TTS server finishing its stream.
+			sidebar.waitForPlaybackComplete().then(resolve);
+
 			abortFn = streamTTS(
 				highlight.ttsText,
 				{ voice, speed },
@@ -91,7 +95,6 @@ function playHighlightChunk(
 				},
 				() => {
 					if (!aborted) sidebar.sendAudioEnd();
-					resolve();
 				},
 				(err) => {
 					console.error("[code-explainer] TTS error:", err);

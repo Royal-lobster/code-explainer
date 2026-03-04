@@ -169,6 +169,10 @@ export interface WebviewRestartMessage {
 	type: "restart";
 }
 
+export interface WebviewPlaybackCompleteMessage {
+	type: "playback_complete";
+}
+
 export type FromWebviewMessage =
 	| WebviewPlayPauseMessage
 	| WebviewNextMessage
@@ -180,4 +184,5 @@ export type FromWebviewMessage =
 	| WebviewVolumeChangeMessage
 	| WebviewVoiceChangeMessage
 	| WebviewMuteToggleMessage
-	| WebviewRestartMessage;
+	| WebviewRestartMessage
+	| WebviewPlaybackCompleteMessage;

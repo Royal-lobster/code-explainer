@@ -7,6 +7,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
 	private view?: vscode.WebviewView;
 	private onMessage?: (msg: FromWebviewMessage) => void;
+	private playbackCompleteResolve?: () => void;
 
 	constructor(private readonly extensionUri: vscode.Uri) {}
 
@@ -29,6 +30,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		webviewView.webview.html = this.getHtml(webviewView.webview);
 
 		webviewView.webview.onDidReceiveMessage((msg: FromWebviewMessage) => {
+			if (msg.type === "playback_complete") {
+				this.playbackCompleteResolve?.();
+				this.playbackCompleteResolve = undefined;
+				return;
+			}
 			this.onMessage?.(msg);
 		});
 	}
@@ -74,6 +80,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
 	sendAudioStop(): void {
 		this.postMessage({ type: "audio_stop" });
+		// Resolve any pending playback wait since audio was forcefully stopped
+		this.playbackCompleteResolve?.();
+		this.playbackCompleteResolve = undefined;
+	}
+
+	/** Returns a promise that resolves when the webview signals playback is done */
+	waitForPlaybackComplete(): Promise<void> {
+		return new Promise((resolve) => {
+			this.playbackCompleteResolve = resolve;
+		});
 	}
 
 	sendHighlightAdvance(highlightIndex: number, totalHighlights: number): void {

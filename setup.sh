@@ -2,7 +2,7 @@
 set -e
 
 # ============================================================================
-# Claude Code Explainer — Setup Script
+# Code Explainer — Setup Script
 # ============================================================================
 # Interactive code walkthrough skill with VS Code highlighting and TTS.
 # Works on macOS with Apple Silicon (M1/M2/M3/M4).
@@ -220,7 +220,7 @@ echo -e "${GREEN}${BOLD}╚═════════════════�
 echo ""
 echo -e "  ${BOLD}Next steps:${NC}"
 echo -e "  1. Reload your editor: ${BLUE}Cmd+Shift+P → 'Developer: Reload Window'${NC}"
-echo -e "  2. Copy skill to Claude Code: ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
+echo -e "  2. Copy skill to your agent: ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
 echo -e "     (skip if already there)"
 echo -e "  3. Use it: ${BLUE}/explainer <feature name>${NC}"
 echo ""

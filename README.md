@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  A Claude Code skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code / Cursor with a dedicated sidebar panel and narrating with natural-sounding local TTS.
+  A coding agent skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code / Cursor with a dedicated sidebar panel and narrating with natural-sounding local TTS. Works with Claude Code, Codex, OpenCode, Kilo Code, Amp, and more.
 </p>
 
 <p align="center">
@@ -43,19 +43,19 @@
 
 ## 🔧 Installation
 
-Just tell Claude Code:
+Just tell your coding agent:
 
 ```
 Install the code explainer skill from https://github.com/Royal-lobster/code-explainer
 ```
 
-Claude will clone the repo into `~/.claude/skills/explainer`, run `setup.sh`, and ask you to reload your editor — all while keeping you in the loop at each step.
+Your agent will clone the repo into `~/.claude/skills/explainer`, run `setup.sh`, and ask you to reload your editor — all while keeping you in the loop at each step.
 
 <details>
 <summary>📋 Manual installation</summary>
 
 ```bash
-# 1. Clone directly into Claude Code skills directory
+# 1. Clone directly into skills directory
 mkdir -p ~/.claude/skills
 git clone https://github.com/Royal-lobster/code-explainer.git ~/.claude/skills/explainer
 
@@ -76,7 +76,7 @@ The setup script handles:
 
 ## 💬 Usage
 
-In Claude Code (or any compatible AI coding agent):
+In your coding agent:
 
 ```
 /explainer the authentication system
@@ -129,7 +129,7 @@ The VS Code sidebar provides buttons for all walkthrough controls:
 
 ### ⌨️ Text Controls
 
-You can also type commands in the Claude Code chat:
+You can also type commands in your agent's chat:
 
 | Command | Action |
 |---------|--------|
@@ -168,10 +168,10 @@ export TTS_SPEED=1.2        # 20% faster
 
 ## 🏗️ Architecture
 
-The extension runs an HTTP + WebSocket server on localhost for communication between Claude Code and the VS Code sidebar.
+The extension runs an HTTP + WebSocket server on localhost for communication between your coding agent and the VS Code sidebar.
 
 ```
-Claude Code ──HTTP──▶ Extension Server ──Events──▶ Sidebar Webview
+Coding Agent ──HTTP──▶ Extension Server ──Events──▶ Sidebar Webview
                            │                            │
                       Highlight API              TTS Audio Stream
                            │                            │
@@ -188,7 +188,7 @@ Claude Code ──HTTP──▶ Extension Server ──Events──▶ Sidebar W
 | 🎯 **Highlight** (`highlight.ts`) | Opens files, scrolls to ranges, and applies gold background decorations. Falls back to file-watcher mode. |
 | 🔊 **TTS Bridge** (`tts-bridge.ts`) | Streams audio from the Python TTS server to the sidebar webview via WebSocket. |
 | 🐍 **TTS Server** (`tts_server.py`) | Persistent Python daemon that loads Kokoro once and streams audio over a Unix socket. |
-| 📡 **Helper Script** (`explainer.sh`) | CLI wrapper around the HTTP API — used by Claude to send plans and poll for user actions. |
+| 📡 **Helper Script** (`explainer.sh`) | CLI wrapper around the HTTP API — used by the coding agent to send plans and poll for user actions. |
 
 ## 📁 Project Structure
 

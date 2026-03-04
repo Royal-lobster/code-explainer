@@ -65,5 +65,9 @@ echo "END" >> /tmp/claude-presentation.txt
 - "Here we have the module definition..." not "This is line 1 through 8 of matching.module.ts"
 - Connect sub-blocks: "Moving down, we see..." / "Next up is..." / "This feeds into..."
 - Keep it flowing -- the highlight movement + voice should feel continuous
+- **Lead with WHY before HOW**: "The system needs to validate prices before matching — here's how it does that" not "This function takes a price parameter and checks..."
+- **Ground in concrete scenarios**: "When a user places a market order, this is the code that runs"
+- **Breeze through boilerplate**: For `[wiring]` segments, don't narrate line-by-line. Instead: "This is standard module setup — the interesting part is coming up next" and move on quickly
+- **Vary pacing**: Slow down and add detail on `[core]` sub-blocks with dense or surprising logic. Speed through obvious patterns and setup code.
 
 See `docs/tts.md` for voice configuration, speed settings, and formatting rules.

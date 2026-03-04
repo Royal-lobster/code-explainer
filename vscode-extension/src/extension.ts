@@ -329,30 +329,6 @@ export function activate(context: vscode.ExtensionContext): void {
 				sidebar.sendAudioStop();
 				walkthrough.goto(msg.segmentId);
 				break;
-			case "go_deeper": {
-				const segment = walkthrough.getCurrentSegment();
-				if (segment) {
-					walkthrough.pause();
-					server.queueAction({
-						type: "user_action",
-						action: "go_deeper",
-						segmentId: segment.id,
-					});
-				}
-				break;
-			}
-			case "zoom_out": {
-				const segment = walkthrough.getCurrentSegment();
-				if (segment) {
-					walkthrough.pause();
-					server.queueAction({
-						type: "user_action",
-						action: "zoom_out",
-						segmentId: segment.id,
-					});
-				}
-				break;
-			}
 			case "speed_change":
 				ttsSpeed = msg.speed;
 				break;

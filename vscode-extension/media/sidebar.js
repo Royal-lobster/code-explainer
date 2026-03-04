@@ -352,16 +352,8 @@ document.getElementById("btn-prev").addEventListener("click", () => {
 	vscode.postMessage({ type: "prev" });
 });
 
-document.getElementById("btn-deeper").addEventListener("click", () => {
-	vscode.postMessage({ type: "go_deeper" });
-});
-
 document.getElementById("btn-restart").addEventListener("click", () => {
 	vscode.postMessage({ type: "restart" });
-});
-
-document.getElementById("btn-zoom-out").addEventListener("click", () => {
-	vscode.postMessage({ type: "zoom_out" });
 });
 
 document.getElementById("volume-slider").addEventListener("input", (e) => {

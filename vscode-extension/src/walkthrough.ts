@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import type { Segment, Highlight, WalkthroughStatus } from "./types";
+import type { Segment, WalkthroughStatus } from "./types";
 
 export interface WalkthroughState {
 	title: string;
@@ -109,36 +109,6 @@ export class Walkthrough extends EventEmitter {
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[idx]);
 		return true;
-	}
-
-	// ── Highlight navigation ──
-
-	getCurrentHighlight(): Highlight | undefined {
-		const segment = this.getCurrentSegment();
-		if (!segment?.highlights?.length) return undefined;
-		return segment.highlights[this.state.currentHighlightIndex];
-	}
-
-	nextHighlight(): boolean {
-		const segment = this.getCurrentSegment();
-		if (!segment?.highlights?.length) return false;
-
-		const nextIdx = this.state.currentHighlightIndex + 1;
-		if (nextIdx >= segment.highlights.length) {
-			return false;
-		}
-
-		this.state.currentHighlightIndex = nextIdx;
-		this.emit("highlight", {
-			segment,
-			highlightIndex: nextIdx,
-			highlight: segment.highlights[nextIdx],
-		});
-		return true;
-	}
-
-	resetHighlightIndex(): void {
-		this.state.currentHighlightIndex = 0;
 	}
 
 	// ── Plan mutations ──

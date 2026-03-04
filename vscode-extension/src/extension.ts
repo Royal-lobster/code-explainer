@@ -136,14 +136,14 @@ export function activate(context: vscode.ExtensionContext): void {
 	// ── Walkthrough events → sidebar + highlights ──
 
 	let currentChunkAbort: (() => void) | undefined;
-	let highlightLoopAborted = false;
+	let highlightLoopGeneration = 0;
 
 	async function playSegmentHighlights(
 		segment: Segment,
 		wt: Walkthrough,
 		sb: SidebarProvider,
 	): Promise<void> {
-		highlightLoopAborted = false;
+		const myGeneration = ++highlightLoopGeneration;
 
 		const highlights = segment.highlights;
 		if (!highlights || highlights.length === 0) {
@@ -170,7 +170,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		sb.updateState(wt.getState());
 
 		for (let i = 0; i < highlights.length; i++) {
-			if (highlightLoopAborted) return;
+			if (myGeneration !== highlightLoopGeneration) return;
 
 			sb.sendHighlightAdvance(i, highlights.length);
 
@@ -186,18 +186,19 @@ export function activate(context: vscode.ExtensionContext): void {
 			await chunk.promise;
 			currentChunkAbort = undefined;
 
-			if (highlightLoopAborted) return;
+			if (myGeneration !== highlightLoopGeneration) return;
 		}
 
 		// All highlights done — auto-advance to next segment
-		if (!highlightLoopAborted && wt.getState().status === "playing") {
+		if (myGeneration === highlightLoopGeneration && wt.getState().status === "playing") {
 			sb.sendAudioStop();
 			wt.next();
 		}
 	}
 
 	walkthrough.on("segment", (segment: Segment) => {
-		highlightLoopAborted = true;
+		// Increment generation to invalidate any in-flight highlight loop
+		highlightLoopGeneration++;
 		if (currentChunkAbort) {
 			currentChunkAbort();
 			currentChunkAbort = undefined;
@@ -208,7 +209,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 		sidebar.sendAudioStop();
 
-		playSegmentHighlights(segment, walkthrough, sidebar);
+		playSegmentHighlights(segment, walkthrough, sidebar).catch((err) => {
+			console.error("[code-explainer] Highlight loop error:", err);
+		});
 	});
 
 	walkthrough.on("plan", () => {
@@ -230,7 +233,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				abortTTS();
 				abortTTS = undefined;
 			}
-			highlightLoopAborted = true;
+			highlightLoopGeneration++;
 			sidebar.sendAudioStop();
 		}
 
@@ -283,16 +286,19 @@ export function activate(context: vscode.ExtensionContext): void {
 				}
 				break;
 			case "next":
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 				if (abortTTS) abortTTS();
 				sidebar.sendAudioStop();
 				walkthrough.next();
 				break;
 			case "prev":
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 				if (abortTTS) abortTTS();
 				sidebar.sendAudioStop();
 				walkthrough.prev();
 				break;
 			case "goto_segment":
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 				if (abortTTS) abortTTS();
 				sidebar.sendAudioStop();
 				walkthrough.goto(msg.segmentId);

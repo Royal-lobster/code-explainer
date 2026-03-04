@@ -84,7 +84,7 @@ function stopAudio() {
 function onAudioEnd() {
 	// If using multi-highlights, the extension controls advancement.
 	// audio_end just means this chunk finished — don't auto-advance segments.
-	if (totalHighlights > 1) {
+	if (totalHighlights >= 1) {
 		audioPlaying = false;
 		return;
 	}

@@ -38,7 +38,7 @@ Just tell your coding agent:
 Install the code explainer skill from https://github.com/Royal-lobster/code-explainer
 ```
 
-Your agent will clone the repo into `~/.claude/skills/explainer`, run `setup.sh`, and ask you to reload your editor — all while keeping you in the loop at each step.
+Your agent will clone the repo into the skills directory, run `setup.sh`, and ask you to reload your editor — all while keeping you in the loop at each step.
 
 <details>
 <summary>📋 Manual installation</summary>
@@ -186,7 +186,7 @@ code-explainer/
 ├── 📄 SKILL.md                      # AI agent skill instructions
 ├── 🔧 setup.sh                      # One-command setup script
 ├── 📂 scripts/
-│   ├── 📡 explainer.sh              # HTTP API helper for Claude
+│   ├── 📡 explainer.sh              # HTTP API helper for the coding agent
 │   └── 🐍 tts_server.py             # Persistent TTS server (Kokoro-82M)
 ├── 📂 docs/
 │   ├── 📖 setup.md                  # Setup reference

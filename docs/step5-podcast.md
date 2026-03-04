@@ -2,7 +2,7 @@
 
 In podcast mode, the entire walkthrough is synthesized into a single WAV file the user can listen to anywhere — no VS Code extension required.
 
-**Key design: standalone audio.** Claude generates all segment narrations, sends them to the TTS server, and produces one WAV file. No sidebar, no highlighting, no interactivity needed.
+**Key design: standalone audio.** The agent generates all segment narrations, sends them to the TTS server, and produces one WAV file. No sidebar, no highlighting, no interactivity needed.
 
 ## How it works
 

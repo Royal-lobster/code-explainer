@@ -30,7 +30,7 @@ Or use the skill command:
 
 ## How It Works
 
-1. You ask Claude to explain a feature
+1. You ask your coding agent to explain a feature
 2. AI scans the codebase and builds an ordered walkthrough plan
 3. You approve or adjust the plan
 4. For each segment, the extension:

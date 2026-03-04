@@ -112,6 +112,9 @@ Sub-highlights provide granular, line-by-line narration within a segment — the
 - Split by logical boundaries: imports, function signature, conditionals/branches, return values, setup vs logic
 - The segment-level `ttsText` is used as fallback when `highlights` is omitted
 - Sub-highlight ranges must be within the segment's `start`-`end` range and should not overlap
+- **ANTI-PATTERN: highlights that mirror the segment.** If a segment is lines 1-56, don't create 3 highlights of 1-17, 19-36, 42-53 — that's just slicing the segment into thirds. Instead, zoom into the 5-15 most important lines within each logical block. Highlights should feel like a magnifying glass on key code, NOT a partition of the segment.
+- **Target coverage: 30-60% of the segment's lines.** Highlights should skip boilerplate, blank lines, and obvious code. If you're covering >80% of the segment's lines across all highlights, your highlights are too broad.
+- **Minimum 3 highlights for segments > 40 lines.** Large segments need more granular narration to keep the viewer engaged.
 
 ## Autoplay narration style
 
@@ -128,8 +131,8 @@ Sub-highlights provide granular, line-by-line narration within a segment — the
 The sidebar provides built-in controls:
 - **Play/Pause button** — pauses TTS and highlighting
 - **Next/Previous buttons** — skip between segments
-- **Go Deeper** — pauses and sends a user_action for Claude to generate sub-segments
-- **Zoom Out** — pauses and sends a user_action for Claude to provide higher-level view
+- **Go Deeper** — pauses and sends a user_action for the agent to generate sub-segments
+- **Zoom Out** — pauses and sends a user_action for the agent to provide higher-level view
 - **Speed buttons** — 1x, 1.25x, 1.5x, 2x TTS playback speed
 - **Volume slider + Mute** — audio control
 - **Voice selector** — choose TTS voice

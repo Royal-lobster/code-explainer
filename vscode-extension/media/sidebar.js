@@ -232,6 +232,13 @@ function render() {
 	playBtn.textContent = state.status === "playing" ? "\u23F8" : "\u25B6";
 	playBtn.title = state.status === "playing" ? "Pause" : "Play";
 
+	// Pulse animation when paused (ready to play)
+	if (state.status === "paused") {
+		playBtn.classList.add("pulse");
+	} else {
+		playBtn.classList.remove("pulse");
+	}
+
 	// Explanation
 	if (seg) {
 		document.getElementById("explanation-text").innerHTML = simpleMarkdown(seg.explanation);

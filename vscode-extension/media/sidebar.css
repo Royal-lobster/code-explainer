@@ -102,6 +102,25 @@ body {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
 
+/* ── Play button pulse animation ── */
+
+@keyframes play-pulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.7;
+		transform: scale(1.1);
+	}
+}
+
+#btn-play-pause.pulse {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	animation: play-pulse 1.5s ease-in-out infinite;
+}
+
 /* ── Audio controls ── */
 
 .audio-controls {

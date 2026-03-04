@@ -218,11 +218,75 @@ echo -e "${GREEN}${BOLD}╔═════════════════�
 echo -e "${GREEN}${BOLD}║   Setup complete!                            ║${NC}"
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════╝${NC}"
 echo ""
+echo -e "  ${BOLD}Skill installed at:${NC} $SCRIPT_DIR"
+echo ""
 echo -e "  ${BOLD}Next steps:${NC}"
 echo -e "  1. Reload your editor: ${BLUE}Cmd+Shift+P → 'Developer: Reload Window'${NC}"
-echo -e "  2. Copy skill to your agent: ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
-echo -e "     (skip if already there)"
-echo -e "  3. Use it: ${BLUE}/explainer <feature name>${NC}"
+
+# Detect which agents are available and print relevant guidance
+DETECTED_AGENTS=()
+
+if [[ "$SCRIPT_DIR" == *"/.claude/skills/"* ]]; then
+    DETECTED_AGENTS+=("Claude Code")
+elif [[ -d "$HOME/.claude" ]]; then
+    DETECTED_AGENTS+=("Claude Code")
+fi
+
+if [[ "$SCRIPT_DIR" == *"/.config/agents/skills/"* ]]; then
+    DETECTED_AGENTS+=("Amp")
+elif [[ -d "$HOME/.config/agents" ]]; then
+    DETECTED_AGENTS+=("Amp")
+fi
+
+if [[ "$SCRIPT_DIR" == *"/.config/opencode/skills/"* ]]; then
+    DETECTED_AGENTS+=("OpenCode")
+elif [[ -d "$HOME/.config/opencode" ]]; then
+    DETECTED_AGENTS+=("OpenCode")
+fi
+
+if [[ "$SCRIPT_DIR" == *"/.codex/skills/"* ]]; then
+    DETECTED_AGENTS+=("Codex CLI")
+elif [[ -d "$HOME/.codex" ]]; then
+    DETECTED_AGENTS+=("Codex CLI")
+fi
+
+# Check if skill is already in a known skills directory
+IN_SKILLS_DIR=false
+if [[ "$SCRIPT_DIR" == *"/skills/explainer"* ]]; then
+    IN_SKILLS_DIR=true
+fi
+
+if $IN_SKILLS_DIR; then
+    echo -e "  2. Use it: ${BLUE}/explainer <feature name>${NC}"
+else
+    echo -e "  2. Copy the skill to your agent's skills directory:"
+    echo ""
+    if [[ " ${DETECTED_AGENTS[*]} " =~ " Claude Code " ]]; then
+        echo -e "     ${BOLD}Claude Code:${NC}  ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
+    fi
+    if [[ " ${DETECTED_AGENTS[*]} " =~ " Amp " ]]; then
+        echo -e "     ${BOLD}Amp:${NC}          ${BLUE}cp -r $SCRIPT_DIR ~/.config/agents/skills/explainer${NC}"
+    fi
+    if [[ " ${DETECTED_AGENTS[*]} " =~ " OpenCode " ]]; then
+        echo -e "     ${BOLD}OpenCode:${NC}     ${BLUE}cp -r $SCRIPT_DIR ~/.config/opencode/skills/explainer${NC}"
+    fi
+    if [[ " ${DETECTED_AGENTS[*]} " =~ " Codex CLI " ]]; then
+        echo -e "     ${BOLD}Codex CLI:${NC}    ${BLUE}cp -r $SCRIPT_DIR ~/.codex/skills/explainer${NC}"
+    fi
+    # If no agents detected, show all options
+    if [[ ${#DETECTED_AGENTS[@]} -eq 0 ]]; then
+        echo -e "     ${BOLD}Claude Code:${NC}  ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
+        echo -e "     ${BOLD}Amp:${NC}          ${BLUE}cp -r $SCRIPT_DIR ~/.config/agents/skills/explainer${NC}"
+        echo -e "     ${BOLD}OpenCode:${NC}     ${BLUE}cp -r $SCRIPT_DIR ~/.config/opencode/skills/explainer${NC}"
+        echo -e "     ${BOLD}Codex CLI:${NC}    ${BLUE}cp -r $SCRIPT_DIR ~/.codex/skills/explainer${NC}"
+    fi
+    echo ""
+    echo -e "     For rule-based agents (Cursor, Windsurf, Kilo, Roo, Cline),"
+    echo -e "     copy ${BLUE}SKILL.md${NC} into your agent's rules directory."
+    echo -e "     See the README for details."
+    echo ""
+    echo -e "  3. Use it: ${BLUE}/explainer <feature name>${NC}"
+fi
 echo ""
 echo -e "  ${BOLD}Modes:${NC}"
 echo -e "  • ${GREEN}Autoplay${NC}     — highlights + voice narration play automatically"

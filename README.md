@@ -43,19 +43,52 @@ Your agent will clone the repo into the skills directory, run `setup.sh`, and as
 <details>
 <summary>📋 Manual installation</summary>
 
+### Skill-native agents
+
+These agents support the `skills/<name>/SKILL.md` format natively. Clone directly into the skills directory:
+
+| Agent | Install commands |
+|-------|-----------------|
+| **Claude Code** | `git clone https://github.com/Royal-lobster/code-explainer.git ~/.claude/skills/explainer` |
+| **Amp** | `git clone https://github.com/Royal-lobster/code-explainer.git ~/.config/agents/skills/explainer` |
+| **OpenCode** | `git clone https://github.com/Royal-lobster/code-explainer.git ~/.config/opencode/skills/explainer` |
+| **Codex CLI** | `git clone https://github.com/Royal-lobster/code-explainer.git ~/.codex/skills/explainer` |
+
+Then run setup:
+
 ```bash
-# 1. Clone directly into skills directory
-mkdir -p ~/.claude/skills
-git clone https://github.com/Royal-lobster/code-explainer.git ~/.claude/skills/explainer
-
-# 2. Run setup (installs everything)
-~/.claude/skills/explainer/setup.sh
-
-# 3. Reload your editor
-# Cmd+Shift+P → "Developer: Reload Window"
+<SKILLS_DIR>/explainer/setup.sh
+# Reload your editor: Cmd+Shift+P → "Developer: Reload Window"
 ```
 
-The setup script handles:
+### Rule-based agents
+
+These agents use their own rules/instructions format. Clone to any location, run setup, then point your agent's rules at the `SKILL.md`:
+
+```bash
+# 1. Clone to a shared location
+git clone https://github.com/Royal-lobster/code-explainer.git ~/code-explainer
+
+# 2. Run setup
+~/code-explainer/setup.sh
+
+# 3. Reload your editor: Cmd+Shift+P → "Developer: Reload Window"
+```
+
+Then add a rule or instruction pointing to the skill:
+
+| Agent | How to add |
+|-------|------------|
+| **Cursor** | Add a `.cursor/rules/explainer.mdc` file in your project that includes the contents of `SKILL.md` |
+| **Windsurf** | Append the contents of `SKILL.md` to `~/.codeium/windsurf/memories/global_rules.md` |
+| **Kilo Code** | Copy `SKILL.md` to `~/.kilocode/rules/explainer.md` |
+| **Roo Code** | Copy `SKILL.md` to `~/.roo/rules/explainer.md` |
+| **Cline** | Copy `SKILL.md` to your `.clinerules/explainer.md` directory |
+
+> **Note:** The `SKILL.md` references relative paths (e.g., `docs/step1-assess.md`), so the full repo must exist at the cloned location. For rule-based agents, ensure paths in the copied rules resolve correctly or use absolute paths.
+
+### What setup.sh does
+
 - 🐍 Python venv creation with TTS engine (mlx-audio + sounddevice)
 - 🧩 VS Code extension build and installation (.vsix for VS Code + Cursor)
 - 🗣️ Voice model download (~330 MB)

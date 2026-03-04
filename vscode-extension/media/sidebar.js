@@ -25,6 +25,8 @@ let activeSources = [];
 let volume = 0.8;
 let muted = false;
 let audioPlaying = false;
+let currentHighlightIndex = 0;
+let totalHighlights = 0;
 
 /** @type {{base64: string, sampleRate: number}[]} */
 let pendingChunks = [];
@@ -99,12 +101,18 @@ function stopAudio() {
 }
 
 function onAudioEnd() {
-	// Audio stream finished — wait for last chunk to play, then auto-advance
+	// If using multi-highlights, the extension controls advancement.
+	// audio_end just means this chunk finished — don't auto-advance segments.
+	if (totalHighlights >= 1) {
+		audioPlaying = false;
+		return;
+	}
+
+	// Legacy single-highlight: auto-advance to next segment
 	if (activeSources.length === 0) {
 		autoAdvance();
 		return;
 	}
-	// Set onended on the last source to trigger auto-advance
 	const lastSource = activeSources[activeSources.length - 1];
 	const originalOnEnded = lastSource.onended;
 	lastSource.onended = (e) => {
@@ -187,6 +195,20 @@ function render() {
 
 	// Outline
 	renderOutline(idx);
+}
+
+function renderHighlightProgress() {
+	const counter = document.getElementById("segment-counter");
+	if (!counter) return;
+
+	const idx = state.segments.findIndex((s) => s.id === state.currentSegment);
+
+	if (totalHighlights > 1) {
+		counter.textContent =
+			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
+	} else {
+		counter.textContent = `${idx + 1}/${state.segments.length}`;
+	}
 }
 
 function renderOutline(currentIdx) {
@@ -287,6 +309,12 @@ window.addEventListener("message", (event) => {
 	const msg = event.data;
 
 	switch (msg.type) {
+		case "highlight_advance":
+			currentHighlightIndex = msg.highlightIndex;
+			totalHighlights = msg.totalHighlights;
+			renderHighlightProgress();
+			break;
+
 		case "update":
 			state = {
 				title: msg.title,
@@ -294,6 +322,8 @@ window.addEventListener("message", (event) => {
 				currentSegment: msg.currentSegment,
 				status: msg.status,
 			};
+			currentHighlightIndex = 0;
+			totalHighlights = 0;
 			render();
 			break;
 

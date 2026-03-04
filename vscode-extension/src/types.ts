@@ -1,5 +1,11 @@
 // ── Walkthrough data ──
 
+export interface Highlight {
+	start: number;   // 1-based line number
+	end: number;     // 1-based line number
+	ttsText: string; // narration for these specific lines
+}
+
 export interface Segment {
 	id: number;
 	file: string;
@@ -8,6 +14,7 @@ export interface Segment {
 	title: string;
 	explanation: string;
 	ttsText: string;
+	highlights?: Highlight[];
 }
 
 // ── Claude → Extension messages (HTTP + WS) ──
@@ -101,11 +108,18 @@ export interface WebviewAudioStopMessage {
 	type: "audio_stop";
 }
 
+export interface WebviewHighlightAdvanceMessage {
+	type: "highlight_advance";
+	highlightIndex: number;
+	totalHighlights: number;
+}
+
 export type ToWebviewMessage =
 	| WebviewUpdateMessage
 	| WebviewAudioChunkMessage
 	| WebviewAudioEndMessage
-	| WebviewAudioStopMessage;
+	| WebviewAudioStopMessage
+	| WebviewHighlightAdvanceMessage;
 
 export interface WebviewPlayPauseMessage {
 	type: "play_pause";

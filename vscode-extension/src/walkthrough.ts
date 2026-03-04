@@ -5,6 +5,7 @@ export interface WalkthroughState {
 	title: string;
 	segments: Segment[];
 	currentIndex: number;
+	currentHighlightIndex: number;
 	status: WalkthroughStatus;
 }
 
@@ -21,6 +22,7 @@ export class Walkthrough extends EventEmitter {
 		title: "",
 		segments: [],
 		currentIndex: -1,
+		currentHighlightIndex: 0,
 		status: "idle",
 	};
 
@@ -35,7 +37,7 @@ export class Walkthrough extends EventEmitter {
 	// ── Plan lifecycle ──
 
 	setPlan(title: string, segments: Segment[]): void {
-		this.state = { title, segments, currentIndex: 0, status: "playing" };
+		this.state = { title, segments, currentIndex: 0, currentHighlightIndex: 0, status: "playing" };
 		this.emit("plan", this.getState());
 		this.emit("status", this.state.status);
 		if (segments.length > 0) {
@@ -80,6 +82,7 @@ export class Walkthrough extends EventEmitter {
 			return false;
 		}
 		this.state.currentIndex = nextIdx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[nextIdx]);
@@ -90,6 +93,7 @@ export class Walkthrough extends EventEmitter {
 		const prevIdx = this.state.currentIndex - 1;
 		if (prevIdx < 0) return false;
 		this.state.currentIndex = prevIdx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[prevIdx]);
@@ -100,6 +104,7 @@ export class Walkthrough extends EventEmitter {
 		const idx = this.state.segments.findIndex((s) => s.id === segmentId);
 		if (idx === -1) return false;
 		this.state.currentIndex = idx;
+		this.state.currentHighlightIndex = 0;
 		this.state.status = "playing";
 		this.emit("status", this.state.status);
 		this.emit("segment", this.state.segments[idx]);

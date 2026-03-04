@@ -66,6 +66,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		this.postMessage({ type: "audio_stop" });
 	}
 
+	sendHighlightAdvance(highlightIndex: number, totalHighlights: number): void {
+		this.postMessage({
+			type: "highlight_advance",
+			highlightIndex,
+			totalHighlights,
+		});
+	}
+
 	private getHtml(webview: vscode.Webview): string {
 		const scriptUri = webview.asWebviewUri(
 			vscode.Uri.joinPath(this.extensionUri, "media", "sidebar.js"),

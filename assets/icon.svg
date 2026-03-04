@@ -1,15 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <rect width="128" height="128" rx="24" fill="#1E1E2E"/>
-  <rect x="20" y="28" width="88" height="72" rx="8" fill="#2D2D44" stroke="#6C6C8A" stroke-width="2"/>
-  <rect x="28" y="48" width="52" height="6" rx="3" fill="#FFD54F" opacity="0.3"/>
-  <rect x="28" y="58" width="72" height="6" rx="3" fill="#FFD54F" opacity="0.3"/>
-  <rect x="28" y="68" width="60" height="6" rx="3" fill="#FFD54F" opacity="0.3"/>
-  <rect x="28" y="36" width="36" height="6" rx="3" fill="#6C6C8A" opacity="0.5"/>
-  <rect x="28" y="80" width="48" height="6" rx="3" fill="#6C6C8A" opacity="0.5"/>
-  <circle cx="98" cy="90" r="22" fill="#FFD54F"/>
-  <path d="M91 90 L96 86 L96 94 Z" fill="#1E1E2E"/>
-  <rect x="96" y="86" width="10" height="8" rx="1" fill="#1E1E2E"/>
-  <circle cx="20" cy="36" r="3" fill="#FF5F57"/>
-  <circle cx="28" cy="36" r="3" fill="#FEBC2E"/>
-  <circle cx="36" cy="36" r="3" fill="#28C840"/>
+  <!-- Background -->
+  <rect width="128" height="128" rx="28" fill="#1A1A2E"/>
+
+  <!-- Code lines (unhighlighted) -->
+  <rect x="30" y="32" width="28" height="4" rx="2" fill="#4A4A6A" opacity="0.5"/>
+  <rect x="30" y="42" width="44" height="4" rx="2" fill="#4A4A6A" opacity="0.5"/>
+
+  <!-- Highlighted code lines (gold glow) -->
+  <rect x="24" y="52" width="80" height="20" rx="4" fill="#FFD54F" opacity="0.12"/>
+  <rect x="30" y="56" width="56" height="4" rx="2" fill="#FFD54F"/>
+  <rect x="30" y="64" width="40" height="4" rx="2" fill="#FFD54F"/>
+
+  <!-- More unhighlighted lines -->
+  <rect x="30" y="78" width="50" height="4" rx="2" fill="#4A4A6A" opacity="0.5"/>
+  <rect x="30" y="88" width="34" height="4" rx="2" fill="#4A4A6A" opacity="0.5"/>
+  <rect x="30" y="98" width="46" height="4" rx="2" fill="#4A4A6A" opacity="0.5"/>
 </svg>

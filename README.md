@@ -85,7 +85,7 @@ Then add a rule or instruction pointing to the skill:
 | **Roo Code** | Copy `SKILL.md` to `~/.roo/rules/explainer.md` |
 | **Cline** | Copy `SKILL.md` to your `.clinerules/explainer.md` directory |
 
-> **Note:** The `SKILL.md` references relative paths (e.g., `docs/step1-assess.md`), so the full repo must exist at the cloned location. For rule-based agents, ensure paths in the copied rules resolve correctly or use absolute paths.
+> **Note:** The `SKILL.md` references relative paths (e.g., `docs/assess.md`), so the full repo must exist at the cloned location. For rule-based agents, ensure paths in the copied rules resolve correctly or use absolute paths.
 
 ### What setup.sh does
 
@@ -223,11 +223,12 @@ code-explainer/
 │   └── 🐍 tts_server.py             # Persistent TTS server (Kokoro-82M)
 ├── 📂 docs/
 │   ├── 📖 setup.md                  # Setup reference
-│   ├── 1️⃣ step1-assess.md           # Preference gathering
-│   ├── 2️⃣ step2-scan.md             # Codebase scanning via sub-agent
-│   ├── 3️⃣ step3-plan.md             # Walkthrough plan generation
-│   ├── 5️⃣ step5-interactive.md      # Interactive mode execution
-│   ├── 🎥 step5-autoplay.md         # Autoplay mode with sidebar streaming
+│   ├── 🎯 assess.md                 # Preference gathering
+│   ├── 🔍 scan.md                   # Codebase scanning via sub-agent
+│   ├── 📋 plan.md                   # Walkthrough plan generation
+│   ├── 🎙️ interactive.md            # Interactive mode execution
+│   ├── 🎥 autoplay.md               # Autoplay mode with sidebar streaming
+│   ├── 🎙️ podcast.md                # Podcast mode (single audio file)
 │   └── 🗣️ tts.md                    # TTS reference (voices, speeds)
 ├── 📂 vscode-extension/
 │   ├── 📦 package.json

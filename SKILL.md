@@ -14,14 +14,14 @@ Run the setup script — it handles everything:
 ```
 
 This will:
-1. Check prerequisites (macOS, Python 3.10+, Node.js, VS Code)
+1. Check prerequisites (macOS, Python 3.10+, Node.js, VS Code or Cursor)
 2. Create a Python venv and install Kokoro TTS (mlx-audio)
-3. Build and install the `code-explainer` VS Code extension
+3. Build and install the `code-explainer` extension (VS Code + Cursor)
 4. Pre-download the Kokoro voice model (~330 MB)
 
-After setup, reload VS Code: `Cmd+Shift+P` → "Developer: Reload Window".
+After setup, reload your editor: `Cmd+Shift+P` → "Developer: Reload Window".
 
-**Requirements:** macOS (Apple Silicon recommended), Python 3.10+, Node.js, VS Code with `code` CLI.
+**Requirements:** macOS (Apple Silicon recommended), Python 3.10+, Node.js, VS Code or Cursor with CLI enabled.
 
 ## Overview
 

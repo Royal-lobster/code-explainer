@@ -39,7 +39,7 @@ skip() { echo -e "  ${YELLOW}→${NC} $1 (skipped)"; }
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}║   Claude Code Explainer — Setup              ║${NC}"
+echo -e "${BOLD}║   Code Explainer — Setup                     ║${NC}"
 echo -e "${BOLD}╚══════════════════════════════════════════════╝${NC}"
 
 # ── Step 1: Check prerequisites ─────────────────────────────────────────────
@@ -58,11 +58,18 @@ else
     warn "Intel Mac detected — Kokoro TTS will run on CPU (slower)"
 fi
 
-# VS Code check
+# Editor CLI check (VS Code or Cursor)
+EDITORS=()
 if command -v code &>/dev/null; then
+    EDITORS+=("code")
     ok "VS Code CLI found: $(code --version | head -1)"
-else
-    fail "VS Code CLI not found. Install VS Code and enable 'code' command: Cmd+Shift+P → 'Shell Command: Install code command'"
+fi
+if command -v cursor &>/dev/null; then
+    EDITORS+=("cursor")
+    ok "Cursor CLI found"
+fi
+if [[ ${#EDITORS[@]} -eq 0 ]]; then
+    fail "No editor CLI found. Install VS Code ('code') or Cursor ('cursor') and enable the CLI command: Cmd+Shift+P → 'Shell Command: Install ...'"
 fi
 
 # Node.js check (for VS Code extension)
@@ -145,7 +152,7 @@ else
 fi
 
 # ── Step 4: Build and install VS Code extension ─────────────────────────────
-header "Building VS Code extension (claude-explainer)"
+header "Building and installing extension"
 
 cd "$EXT_DIR"
 
@@ -158,23 +165,25 @@ npm run compile --silent 2>&1
 ok "TypeScript compiled"
 
 # Package as VSIX
-VSIX_FILE="$EXT_DIR/claude-explainer-0.1.0.vsix"
+VSIX_FILE="$EXT_DIR/code-explainer-0.1.0.vsix"
 npx @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
 ok "VSIX packaged"
 
-# Install extension
-code --install-extension "$VSIX_FILE" --force 2>&1 | grep -v "^$"
-ok "Extension installed in VS Code"
+# Install extension in all detected editors
+for EDITOR_CLI in "${EDITORS[@]}"; do
+    "$EDITOR_CLI" --install-extension "$VSIX_FILE" --force 2>&1 | grep -v "^$"
+    ok "Extension installed in $EDITOR_CLI"
+done
 
 cd "$SCRIPT_DIR"
 
 # ── Step 5: Make scripts executable ─────────────────────────────────────────
 header "Setting up scripts"
 
-chmod +x "$SCRIPT_DIR/highlight.sh"
-chmod +x "$SCRIPT_DIR/speak.sh"
-chmod +x "$SCRIPT_DIR/present.sh"
-chmod +x "$SCRIPT_DIR/kokoro_speak.py"
+chmod +x "$SCRIPT_DIR/scripts/highlight.sh"
+chmod +x "$SCRIPT_DIR/scripts/speak.sh"
+chmod +x "$SCRIPT_DIR/scripts/present.sh"
+chmod +x "$SCRIPT_DIR/scripts/kokoro_speak.py"
 chmod +x "$SCRIPT_DIR/setup.sh"
 ok "All scripts marked executable"
 
@@ -210,7 +219,7 @@ echo -e "${GREEN}${BOLD}║   Setup complete!                            ║${NC
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  ${BOLD}Next steps:${NC}"
-echo -e "  1. Reload VS Code: ${BLUE}Cmd+Shift+P → 'Developer: Reload Window'${NC}"
+echo -e "  1. Reload your editor: ${BLUE}Cmd+Shift+P → 'Developer: Reload Window'${NC}"
 echo -e "  2. Copy skill to Claude Code: ${BLUE}cp -r $SCRIPT_DIR ~/.claude/skills/explainer${NC}"
 echo -e "     (skip if already there)"
 echo -e "  3. Use it: ${BLUE}/explainer <feature name>${NC}"

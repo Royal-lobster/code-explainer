@@ -5,11 +5,11 @@
 <h1 align="center">Code Explainer</h1>
 
 <p align="center">
-  <strong>Interactive code walkthroughs with VS Code highlighting and AI-powered voice narration.</strong>
+  <strong>Interactive code walkthroughs with editor highlighting and AI-powered voice narration.</strong>
 </p>
 
 <p align="center">
-  An AI coding agent skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code and narrating with natural-sounding TTS.
+  An AI coding agent skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code / Cursor and narrating with natural-sounding TTS.
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 
 ## Features
 
-- **VS Code Integration** — Automatically opens files, scrolls to code, and highlights line ranges with a gold background decoration
+- **VS Code & Cursor** — Automatically opens files, scrolls to code, and highlights line ranges with a gold background decoration
 - **Kokoro TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon
 - **Three Modes** — Autoplay (hands-free), Interactive + TTS, or Interactive (text only)
 - **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
@@ -35,13 +35,13 @@
 - macOS (Apple Silicon recommended for GPU-accelerated TTS)
 - Python 3.10+
 - Node.js 18+
-- VS Code with `code` CLI enabled
+- VS Code or Cursor with CLI enabled (`code` or `cursor` command)
 
 ## Installation
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/srujangurram/code-explainer.git
+git clone https://github.com/Royal-lobster/code-explainer.git
 
 # 2. Symlink to Claude Code skills directory
 mkdir -p ~/.claude/skills
@@ -50,13 +50,13 @@ ln -s "$(pwd)/code-explainer" ~/.claude/skills/explainer
 # 3. Run setup (installs everything)
 ~/.claude/skills/explainer/setup.sh
 
-# 4. Reload VS Code
+# 4. Reload your editor
 # Cmd+Shift+P → "Developer: Reload Window"
 ```
 
 The setup script handles:
 - Python venv creation with Kokoro TTS (mlx-audio)
-- VS Code extension build and installation
+- Extension build and installation (VS Code + Cursor)
 - Voice model download (~330 MB)
 - Script permissions
 
@@ -129,7 +129,7 @@ export KOKORO_SPEED=1.2        # 20% faster
 3. Builds an ordered walkthrough plan
 4. You approve or adjust the plan
 5. For each segment:
-   ├── Highlights lines in VS Code (via extension)
+   ├── Highlights lines in your editor (via extension)
    ├── Reads the code
    ├── Explains the segment
    ├── Narrates via TTS (if enabled)
@@ -151,7 +151,7 @@ code-explainer/
 ├── vscode-extension/
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── src/extension.ts      # VS Code extension (file watcher + decorator)
+│   └── src/extension.ts      # Editor extension (file watcher + decorator)
 └── assets/
     └── icon.svg
 ```

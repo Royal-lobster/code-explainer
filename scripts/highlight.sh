@@ -7,4 +7,6 @@ FILE="$1"
 START="$2"
 END="$3"
 
-echo "{\"file\":\"$FILE\",\"start\":$START,\"end\":$END}" > ~/.claude-highlight.json
+# Use python/node-free JSON construction with proper escaping
+ESCAPED_FILE=$(printf '%s' "$FILE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+printf '{"file":"%s","start":%d,"end":%d}\n' "$ESCAPED_FILE" "$START" "$END" > ~/.claude-highlight.json

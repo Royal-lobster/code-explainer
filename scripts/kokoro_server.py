@@ -157,6 +157,7 @@ if __name__ == "__main__":
             stderr=log,
             start_new_session=True,
         )
+        log.close()
         print(f"[kokoro-server] Started daemon (PID {proc.pid})")
         sys.exit(0)
 

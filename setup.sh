@@ -165,9 +165,12 @@ npm run compile --silent 2>&1
 ok "TypeScript compiled"
 
 # Package as VSIX
-VSIX_FILE="$EXT_DIR/code-explainer-0.1.0.vsix"
 npx @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
-ok "VSIX packaged"
+VSIX_FILE=$(ls -t "$EXT_DIR"/*.vsix 2>/dev/null | head -1)
+if [[ -z "$VSIX_FILE" ]]; then
+    fail "VSIX packaging failed — no .vsix file found"
+fi
+ok "VSIX packaged: $(basename "$VSIX_FILE")"
 
 # Install extension in all detected editors
 for EDITOR_CLI in "${EDITORS[@]}"; do
@@ -191,7 +194,7 @@ ok "All scripts marked executable"
 header "Pre-downloading Kokoro voice model"
 
 echo "  Downloading model (~330 MB on first run)..."
-"$VENV_PYTHON" -c "
+if "$VENV_PYTHON" -c "
 from mlx_audio.tts.generate import generate_audio
 import tempfile, os
 with tempfile.TemporaryDirectory() as d:
@@ -203,10 +206,7 @@ with tempfile.TemporaryDirectory() as d:
         file_prefix=os.path.join(d, 'test'),
         verbose=False,
     )
-print('ok')
-" 2>&1 | grep -v "^Fetching\|^$\|INFO\|pip\|spacy\|Collecting\|Downloading\|Installing\|Successfully\|✔" | tail -1
-
-if [[ $? -eq 0 ]]; then
+" 2>&1 | grep -v "^Fetching\|^$\|INFO\|pip\|spacy\|Collecting\|Downloading\|Installing\|Successfully\|✔" | tail -1; then
     ok "Kokoro model downloaded and cached"
 else
     warn "Model download had issues — will retry on first use"

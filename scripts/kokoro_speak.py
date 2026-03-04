@@ -30,11 +30,13 @@ def server_running() -> bool:
 def start_server():
     """Start the TTS server as a daemon and wait for it to be ready."""
     print("[kokoro-tts] Starting server (first-time model load ~5s)...", flush=True)
+    log = open("/tmp/kokoro-tts.log", "a")
     subprocess.Popen(
         [VENV_PYTHON, SERVER_SCRIPT, "--daemon"],
-        stdout=open("/tmp/kokoro-tts.log", "a"),
+        stdout=log,
         stderr=subprocess.STDOUT,
     )
+    log.close()
     # Wait for server to be ready (up to 30s for model loading)
     import time
     for _ in range(60):

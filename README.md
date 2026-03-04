@@ -44,17 +44,14 @@
 ## 🔧 Installation
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/Royal-lobster/code-explainer.git
-
-# 2. Symlink to Claude Code skills directory
+# 1. Clone directly into Claude Code skills directory
 mkdir -p ~/.claude/skills
-ln -s "$(pwd)/code-explainer" ~/.claude/skills/explainer
+git clone https://github.com/Royal-lobster/code-explainer.git ~/.claude/skills/explainer
 
-# 3. Run setup (installs everything)
+# 2. Run setup (installs everything)
 ~/.claude/skills/explainer/setup.sh
 
-# 4. Reload your editor
+# 3. Reload your editor
 # Cmd+Shift+P → "Developer: Reload Window"
 ```
 

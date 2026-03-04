@@ -40,7 +40,7 @@ EOF
 ~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
 
-Playback starts immediately.
+The sidebar loads the plan and shows the first segment's code location. Playback does NOT start automatically — the user must press the Play button on the sidebar to begin. Tell the user: **"Press ▶ Play on the sidebar to start the walkthrough."**
 
 3. **Handle user actions (optional):**
 

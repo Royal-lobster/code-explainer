@@ -230,18 +230,17 @@ code-explainer/
 │   ├── 🎥 autoplay.md               # Autoplay mode with sidebar streaming
 │   ├── 🎙️ podcast.md                # Podcast mode (single audio file)
 │   └── 🗣️ tts.md                    # TTS reference (voices, speeds)
-├── 📂 vscode-extension/
-│   ├── 📦 package.json
-│   ├── ⚙️ tsconfig.json
-│   └── 📂 src/
-│       ├── 🚀 extension.ts          # Main entry point
-│       ├── 🌐 server.ts             # HTTP + WebSocket server
-│       ├── 🪟 sidebar.ts            # Webview sidebar provider
-│       ├── 🔄 walkthrough.ts        # Walkthrough state machine
-│       ├── 🎯 highlight.ts          # Code highlighting
-│       ├── 🔊 tts-bridge.ts         # TTS audio streaming
-│       └── 📝 types.ts              # Message protocol types
 └── 📂 vscode-extension/
+    ├── 📦 package.json
+    ├── ⚙️ tsconfig.json
+    ├── 📂 src/
+    │   ├── 🚀 extension.ts          # Main entry point
+    │   ├── 🌐 server.ts             # HTTP + WebSocket server
+    │   ├── 🪟 sidebar.ts            # Webview sidebar provider
+    │   ├── 🔄 walkthrough.ts        # Walkthrough state machine
+    │   ├── 🎯 highlight.ts          # Code highlighting
+    │   ├── 🔊 tts-bridge.ts         # TTS audio streaming
+    │   └── 📝 types.ts              # Message protocol types
     └── 📂 media/
         └── 🎨 icon.svg
 ```

@@ -12,17 +12,6 @@
   A coding agent skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code / Cursor with a dedicated sidebar panel and narrating with natural-sounding local TTS. Works with Claude Code, Codex, OpenCode, Kilo Code, Amp, and more.
 </p>
 
-<p align="center">
-  <a href="#-features">Features</a> &bull;
-  <a href="#-requirements">Requirements</a> &bull;
-  <a href="#-installation">Installation</a> &bull;
-  <a href="#-usage">Usage</a> &bull;
-  <a href="#-modes">Modes</a> &bull;
-  <a href="#-voice-configuration">Voice Config</a> &bull;
-  <a href="#-architecture">Architecture</a> &bull;
-  <a href="docs/uninstall.md">Uninstall</a>
-</p>
-
 ---
 
 ## 🚀 Features

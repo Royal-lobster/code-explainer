@@ -1,0 +1,285 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	color: var(--vscode-foreground);
+	padding: 12px;
+}
+
+/* ── Idle view ── */
+
+.idle-text {
+	text-align: center;
+	margin-top: 40px;
+	opacity: 0.6;
+	font-size: 1.1em;
+}
+
+.idle-hint {
+	text-align: center;
+	margin-top: 8px;
+	opacity: 0.4;
+	font-size: 0.9em;
+}
+
+.idle-hint code {
+	background: var(--vscode-textCodeBlock-background);
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* ── Header ── */
+
+.header h2 {
+	font-size: 1.1em;
+	font-weight: 600;
+	margin-bottom: 12px;
+	color: var(--vscode-foreground);
+}
+
+/* ── Now playing ── */
+
+.now-playing {
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 6px;
+	padding: 10px 12px;
+	margin-bottom: 12px;
+}
+
+.counter {
+	font-size: 0.85em;
+	opacity: 0.6;
+	margin-right: 6px;
+}
+
+.seg-title {
+	font-weight: 600;
+}
+
+.seg-location {
+	display: block;
+	margin-top: 4px;
+	font-size: 0.85em;
+	color: var(--vscode-textLink-foreground);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.seg-location:hover {
+	text-decoration: underline;
+}
+
+/* ── Playback controls ── */
+
+.controls {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.controls button {
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	border-radius: 6px;
+	width: 40px;
+	height: 36px;
+	font-size: 1.1em;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.controls button:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* ── Audio controls ── */
+
+.audio-controls {
+	margin-bottom: 12px;
+}
+
+.control-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.control-row .label {
+	font-size: 0.8em;
+	opacity: 0.6;
+	width: 40px;
+	flex-shrink: 0;
+}
+
+.control-row input[type="range"] {
+	flex: 1;
+	height: 4px;
+	accent-color: var(--vscode-focusBorder);
+}
+
+.control-row select {
+	flex: 1;
+	background: var(--vscode-dropdown-background);
+	color: var(--vscode-dropdown-foreground);
+	border: 1px solid var(--vscode-dropdown-border);
+	border-radius: 4px;
+	padding: 3px 6px;
+	font-size: 0.85em;
+}
+
+#btn-mute {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 1em;
+	padding: 2px;
+	opacity: 0.7;
+}
+
+#btn-mute:hover {
+	opacity: 1;
+}
+
+/* ── Speed buttons ── */
+
+.speed-buttons {
+	display: flex;
+	gap: 4px;
+	flex: 1;
+}
+
+.speed-buttons button {
+	flex: 1;
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	border-radius: 4px;
+	padding: 3px 6px;
+	font-size: 0.8em;
+	cursor: pointer;
+}
+
+.speed-buttons button:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.speed-buttons button.active {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+}
+
+/* ── Explanation ── */
+
+.explanation-box {
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 12px;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.explanation-text {
+	font-size: 0.9em;
+	line-height: 1.5;
+}
+
+.explanation-text code {
+	background: var(--vscode-textCodeBlock-background);
+	padding: 1px 4px;
+	border-radius: 3px;
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.9em;
+}
+
+/* ── Action buttons ── */
+
+.action-buttons {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.action-buttons button {
+	flex: 1;
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	border-radius: 4px;
+	padding: 6px 10px;
+	font-size: 0.85em;
+	cursor: pointer;
+}
+
+.action-buttons button:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* ── Outline ── */
+
+.outline h3 {
+	font-size: 0.9em;
+	font-weight: 600;
+	margin-bottom: 8px;
+	opacity: 0.8;
+}
+
+.outline ul {
+	list-style: none;
+}
+
+.outline li {
+	padding: 4px 8px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.85em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.outline li:hover {
+	background: var(--vscode-list-hoverBackground);
+}
+
+.outline li.current {
+	background: var(--vscode-list-activeSelectionBackground);
+	color: var(--vscode-list-activeSelectionForeground);
+}
+
+.outline li.completed {
+	opacity: 0.6;
+}
+
+.outline .marker {
+	width: 16px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+/* ── Done view ── */
+
+.done-text {
+	text-align: center;
+	margin-top: 40px;
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.done-summary {
+	text-align: center;
+	margin-top: 8px;
+	opacity: 0.6;
+}

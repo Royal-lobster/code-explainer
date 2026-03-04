@@ -27,6 +27,8 @@ let muted = false;
 let audioPlaying = false;
 let currentHighlightIndex = 0;
 let totalHighlights = 0;
+/** True while waiting for the first highlight_advance after a segment change */
+let awaitingHighlightAdvance = false;
 
 /** @type {{base64: string, sampleRate: number}[]} */
 let pendingChunks = [];
@@ -161,6 +163,15 @@ function onAudioEnd() {
 	// If AudioContext is suspended (no user gesture yet), chunks are queued
 	// but nothing actually played — don't auto-advance.
 	if (!audioCtx || audioCtx.state === "suspended") {
+		audioPlaying = false;
+		return;
+	}
+
+	// If an update just reset totalHighlights and we haven't received
+	// highlight_advance yet, this audio_end is stale (from the previous
+	// segment). Don't auto-advance — the new segment's highlights will
+	// arrive shortly.
+	if (awaitingHighlightAdvance) {
 		audioPlaying = false;
 		return;
 	}
@@ -381,6 +392,7 @@ window.addEventListener("message", (event) => {
 		case "highlight_advance":
 			currentHighlightIndex = msg.highlightIndex;
 			totalHighlights = msg.totalHighlights;
+			awaitingHighlightAdvance = false;
 			renderHighlightProgress();
 			break;
 
@@ -393,6 +405,7 @@ window.addEventListener("message", (event) => {
 			};
 			currentHighlightIndex = 0;
 			totalHighlights = 0;
+			awaitingHighlightAdvance = state.status === "playing";
 			render();
 			break;
 

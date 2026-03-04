@@ -7,7 +7,7 @@ import { ExplainerServer } from "./server";
 import { SidebarProvider } from "./sidebar";
 import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights } from "./highlight";
 import { streamTTS, isTTSAvailable } from "./tts-bridge";
-import type { ClaudeMessage, FromWebviewMessage, Segment, Highlight } from "./types";
+import type { AgentMessage, FromWebviewMessage, Segment, Highlight } from "./types";
 
 // ── File-watcher fallback (backward compat) ──
 
@@ -245,9 +245,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 	});
 
-	// ── Claude messages → walkthrough state ──
+	// ── Agent messages → walkthrough state ──
 
-	server.setMessageHandler((msg: ClaudeMessage) => {
+	server.setMessageHandler((msg: AgentMessage) => {
 		switch (msg.type) {
 			case "set_plan":
 				walkthrough.setPlan(msg.title, msg.segments);

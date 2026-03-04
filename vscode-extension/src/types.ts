@@ -17,7 +17,7 @@ export interface Segment {
 	highlights?: Highlight[];
 }
 
-// ── Claude → Extension messages (HTTP + WS) ──
+// ── Agent → Extension messages (HTTP + WS) ──
 
 export interface SetPlanMessage {
 	type: "set_plan";
@@ -55,7 +55,7 @@ export interface StopMessage {
 	type: "stop";
 }
 
-export type ClaudeMessage =
+export type AgentMessage =
 	| SetPlanMessage
 	| InsertAfterMessage
 	| ReplaceSegmentMessage
@@ -64,7 +64,7 @@ export type ClaudeMessage =
 	| ResumeMessage
 	| StopMessage;
 
-// ── Extension → Claude messages ──
+// ── Extension → Agent messages ──
 
 export type WalkthroughStatus = "playing" | "paused" | "stopped" | "idle";
 

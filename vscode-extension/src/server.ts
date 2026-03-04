@@ -5,14 +5,14 @@ import * as path from "path";
 import * as fs from "fs";
 import { WebSocketServer, WebSocket } from "ws";
 import type { Walkthrough } from "./walkthrough";
-import type { ClaudeMessage, ExtensionMessage, UserActionMessage } from "./types";
+import type { AgentMessage, ExtensionMessage, UserActionMessage } from "./types";
 
 const PORT_FILE = path.join(os.homedir(), ".claude-explainer-port");
 const TOKEN_FILE = path.join(os.homedir(), ".claude-explainer-token");
 const MAX_BODY_SIZE = 1024 * 1024; // 1MB
 const MAX_LONG_POLL_TIMEOUT = 120_000; // 2 minutes
 
-const VALID_CLAUDE_MESSAGE_TYPES = new Set([
+const VALID_AGENT_MESSAGE_TYPES = new Set([
 	"set_plan",
 	"insert_after",
 	"replace_segment",
@@ -64,7 +64,7 @@ export class ExplainerServer {
 		} catch {}
 	}
 
-	/** Queue a user action for Claude to pick up via long-poll or WS */
+	/** Queue a user action for the agent to pick up via long-poll or WS */
 	queueAction(action: UserActionMessage): void {
 		// If someone is waiting, deliver immediately
 		const waiter = this.actionWaiters.shift();
@@ -137,12 +137,12 @@ export class ExplainerServer {
 			this.readBody(req, res, (body) => {
 				try {
 					const msg = JSON.parse(body);
-					if (!this.validateClaudeMessage(msg)) {
+					if (!this.validateAgentMessage(msg)) {
 						res.writeHead(400);
 						res.end(JSON.stringify({ error: "Invalid message format" }));
 						return;
 					}
-					this.handleClaudeMessage(msg as ClaudeMessage);
+					this.handleAgentMessage(msg as AgentMessage);
 					res.writeHead(200);
 					res.end(JSON.stringify({ ok: true }));
 				} catch {
@@ -210,11 +210,11 @@ export class ExplainerServer {
 		ws.on("message", (data) => {
 			try {
 				const msg = JSON.parse(data.toString());
-				if (!this.validateClaudeMessage(msg)) {
+				if (!this.validateAgentMessage(msg)) {
 					console.error("[code-explainer] Invalid WS message format");
 					return;
 				}
-				this.handleClaudeMessage(msg as ClaudeMessage);
+				this.handleAgentMessage(msg as AgentMessage);
 			} catch (err) {
 				console.error("[code-explainer] Invalid WS message:", err);
 			}
@@ -230,10 +230,10 @@ export class ExplainerServer {
 
 	// ── Validation ──
 
-	private validateClaudeMessage(msg: unknown): boolean {
+	private validateAgentMessage(msg: unknown): boolean {
 		if (!msg || typeof msg !== "object") return false;
 		const m = msg as Record<string, unknown>;
-		if (typeof m.type !== "string" || !VALID_CLAUDE_MESSAGE_TYPES.has(m.type)) return false;
+		if (typeof m.type !== "string" || !VALID_AGENT_MESSAGE_TYPES.has(m.type)) return false;
 
 		switch (m.type) {
 			case "set_plan":
@@ -256,14 +256,14 @@ export class ExplainerServer {
 
 	// ── Message dispatch ──
 
-	private onClaudeMessage?: (msg: ClaudeMessage) => void;
+	private onAgentMessage?: (msg: AgentMessage) => void;
 
-	setMessageHandler(handler: (msg: ClaudeMessage) => void): void {
-		this.onClaudeMessage = handler;
+	setMessageHandler(handler: (msg: AgentMessage) => void): void {
+		this.onAgentMessage = handler;
 	}
 
-	private handleClaudeMessage(msg: ClaudeMessage): void {
-		this.onClaudeMessage?.(msg);
+	private handleAgentMessage(msg: AgentMessage): void {
+		this.onAgentMessage?.(msg);
 	}
 
 	// ── Helpers ──

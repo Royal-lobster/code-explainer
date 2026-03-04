@@ -2,17 +2,20 @@ import * as vscode from "vscode";
 
 // Dim background for the full segment range
 const segmentDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(255, 213, 79, 0.08)",
+	backgroundColor: "rgba(130, 170, 255, 0.06)",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(255, 213, 79, 0.4)",
+	overviewRulerColor: "rgba(130, 170, 255, 0.35)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
 // Bright highlight for the active sub-highlight
 const activeDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(255, 213, 79, 0.25)",
+	backgroundColor: "rgba(97, 218, 251, 0.15)",
 	isWholeLine: true,
-	overviewRulerColor: "rgba(255, 213, 79, 0.6)",
+	borderWidth: "0 0 0 3px",
+	borderStyle: "solid",
+	borderColor: "rgba(97, 218, 251, 0.7)",
+	overviewRulerColor: "rgba(97, 218, 251, 0.6)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 

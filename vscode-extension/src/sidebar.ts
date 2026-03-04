@@ -122,7 +122,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <body>
 	<div id="idle-view">
 		<p class="idle-text">Waiting for walkthrough...</p>
-		<p class="idle-hint">Run <code>/explainer</code> in Claude to start</p>
+		<p class="idle-hint">Run <code>/explainer</code> in your coding agent to start</p>
 	</div>
 
 	<div id="active-view" style="display:none;">

@@ -10,7 +10,7 @@ The server starts automatically on first TTS call and stays running in the backg
 
 ## Behavior
 
-- Speech is **non-blocking** -- Claude continues while audio plays (use `run_in_background: true` on the Bash call)
+- Speech is **non-blocking** -- the agent continues while audio plays (use `run_in_background: true` on the Bash call)
 - Previous speech is **auto-canceled** when a new segment starts (the script kills the previous client process before speaking)
 - Audio is **streamed** -- playback starts as soon as the first sentence is generated, while remaining sentences generate in parallel
 

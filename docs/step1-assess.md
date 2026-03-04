@@ -17,8 +17,8 @@ Default to **Overview** if the user seems unfamiliar with the code.
 | Mode | Description |
 |------|-------------|
 | **Autoplay** (recommended) | Highlights move through code automatically while narration plays in sync. Hands-free — just watch and listen. Say "pause" to stop. |
-| **Interactive + TTS** | Step-by-step with voice. Claude highlights, explains in text + voice, then waits for "next". You control the pace. |
-| **Interactive (text only)** | Step-by-step, text only. Claude highlights, explains in text, waits for "next". |
+| **Interactive + TTS** | Step-by-step with voice. The agent highlights, explains in text + voice, then waits for "next". You control the pace. |
+| **Interactive (text only)** | Step-by-step, text only. The agent highlights, explains in text, waits for "next". |
 | **Podcast** | Generates a single audio file of the entire walkthrough. Just listen. |
 
 Default to **Autoplay** if the user doesn't answer.

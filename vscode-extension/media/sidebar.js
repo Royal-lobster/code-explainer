@@ -54,44 +54,6 @@ function ensureAudioContext() {
 // Pre-warm AudioContext on first user interaction so it's ready when audio arrives
 document.addEventListener("click", () => ensureAudioContext(), { once: true });
 
-/**
- * Check if AudioContext needs a user gesture and show an overlay if so.
- * Returns true if audio is ready, false if we're waiting for a gesture.
- */
-function needsAudioGesture() {
-	if (audioCtx && audioCtx.state === "running") return false;
-	// Try creating — will be suspended without a gesture
-	ensureAudioContext();
-	return !audioCtx || audioCtx.state !== "running";
-}
-
-function showAudioGateOverlay() {
-	if (document.getElementById("audio-gate-overlay")) return;
-
-	const overlay = document.createElement("div");
-	overlay.id = "audio-gate-overlay";
-	overlay.innerHTML = `
-		<button id="audio-gate-btn" title="Click to start audio playback">
-			<span class="play-icon">&#9654;</span>
-		</button>
-		<span class="audio-gate-hint">Click play to start audio</span>
-	`;
-	document.getElementById("active-view").prepend(overlay);
-
-	document.getElementById("audio-gate-btn").addEventListener("click", () => {
-		ensureAudioContext(); // Called synchronously during user gesture
-		overlay.remove();
-		// Re-trigger current segment so TTS restarts with AudioContext now unlocked
-		if (state.currentSegment != null) {
-			vscode.postMessage({ type: "goto_segment", segmentId: state.currentSegment });
-		}
-	});
-}
-
-function removeAudioGateOverlay() {
-	const overlay = document.getElementById("audio-gate-overlay");
-	if (overlay) overlay.remove();
-}
 
 function playAudioChunk(base64Data, sampleRate) {
 	ensureAudioContext();
@@ -206,6 +168,14 @@ function updateVolume() {
 
 // ── UI rendering ──
 
+function showDoneView() {
+	document.getElementById("idle-view").style.display = "none";
+	document.getElementById("active-view").style.display = "none";
+	document.getElementById("done-view").style.display = "";
+	document.getElementById("done-summary").textContent =
+		`${state.segments.length} segments covered`;
+}
+
 function render() {
 	const idleView = document.getElementById("idle-view");
 	const activeView = document.getElementById("active-view");
@@ -219,24 +189,23 @@ function render() {
 	}
 
 	if (state.status === "stopped") {
-		idleView.style.display = "none";
-		activeView.style.display = "none";
-		doneView.style.display = "";
-		document.getElementById("done-summary").textContent =
-			`${state.segments.length} segments covered`;
+		// If audio is still playing, wait for it to finish before showing done view
+		if (activeSources.length > 0) {
+			const lastSource = activeSources[activeSources.length - 1];
+			const originalOnEnded = lastSource.onended;
+			lastSource.onended = (e) => {
+				if (originalOnEnded) originalOnEnded.call(lastSource, e);
+				showDoneView();
+			};
+			return;
+		}
+		showDoneView();
 		return;
 	}
 
 	idleView.style.display = "none";
 	activeView.style.display = "";
 	doneView.style.display = "none";
-
-	// If playing but AudioContext needs a user gesture, show the gate overlay
-	if (state.status === "playing" && needsAudioGesture()) {
-		showAudioGateOverlay();
-	} else {
-		removeAudioGateOverlay();
-	}
 
 	// Title
 	document.getElementById("walkthrough-title").textContent = state.title;

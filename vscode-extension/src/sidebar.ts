@@ -151,9 +151,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 			<label class="control-row">
 				<span class="label">Speed</span>
 				<div class="speed-buttons" id="speed-buttons">
-					<button data-speed="1">1x</button>
+					<button data-speed="1" class="active">1x</button>
 					<button data-speed="1.25">1.25x</button>
-					<button data-speed="1.5" class="active">1.5x</button>
+					<button data-speed="1.5">1.5x</button>
 					<button data-speed="2">2x</button>
 				</div>
 			</label>

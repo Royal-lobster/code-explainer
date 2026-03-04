@@ -37,12 +37,9 @@ export class Walkthrough extends EventEmitter {
 	// ── Plan lifecycle ──
 
 	setPlan(title: string, segments: Segment[]): void {
-		this.state = { title, segments, currentIndex: 0, currentHighlightIndex: 0, status: "playing" };
+		this.state = { title, segments, currentIndex: 0, currentHighlightIndex: 0, status: "paused" };
 		this.emit("plan", this.getState());
 		this.emit("status", this.state.status);
-		if (segments.length > 0) {
-			this.emit("segment", segments[0]);
-		}
 	}
 
 	stop(): void {

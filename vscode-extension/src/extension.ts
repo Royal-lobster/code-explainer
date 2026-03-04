@@ -67,7 +67,7 @@ let abortTTS: (() => void) | undefined;
 
 // TTS settings — updated by webview messages
 let ttsVoice = "af_heart";
-let ttsSpeed = 1.5;
+let ttsSpeed = 1;
 
 function playHighlightChunk(
 	segment: Segment,
@@ -194,7 +194,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		// All highlights done — auto-advance to next segment
 		if (myGeneration === highlightLoopGeneration && wt.getState().status === "playing") {
-			sb.sendAudioStop();
 			wt.next();
 		}
 	}
@@ -240,7 +239,11 @@ export function activate(context: vscode.ExtensionContext): void {
 				abortTTS = undefined;
 			}
 			highlightLoopGeneration++;
-			sidebar.sendAudioStop();
+			// Only force-stop audio on pause (user wants silence now).
+			// On "stopped" (natural end), let webview audio drain naturally.
+			if (state.status === "paused") {
+				sidebar.sendAudioStop();
+			}
 		}
 
 		if (state.status === "stopped") {
@@ -276,6 +279,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (seg) walkthrough.emit("segment", seg);
 				break;
 			case "stop":
+				sidebar.sendAudioStop();
 				walkthrough.stop();
 				break;
 		}

@@ -4,6 +4,7 @@
 	"description": "Interactive code walkthroughs with AI-powered voice narration and editor highlighting.",
 	"version": "0.2.0",
 	"publisher": "srujangurram",
+	"icon": "media/icon.png",
 	"engines": {
 		"vscode": "^1.85.0"
 	},
@@ -16,7 +17,7 @@
 				{
 					"id": "code-explainer",
 					"title": "Code Explainer",
-					"icon": "media/icon.svg"
+					"icon": "media/icon.png"
 				}
 			]
 		},

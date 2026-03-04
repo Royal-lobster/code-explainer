@@ -9,7 +9,8 @@ Preferences are saved at `~/.config/code-explainer/config.json`. On first use, t
   "depth": "overview",
   "mode": "autoplay",
   "speed": 1.0,
-  "voice": "af_heart"
+  "voice": "af_heart",
+  "model": "prince-canuma/Kokoro-82M"
 }
 ```
 
@@ -29,7 +30,7 @@ If it doesn't exist, proceed with Step 1 (see `docs/step1-assess.md`). After get
 ```bash
 mkdir -p ~/.config/code-explainer
 cat > ~/.config/code-explainer/config.json << 'EOF'
-{"depth": "overview", "mode": "autoplay", "speed": 1.0, "voice": "af_heart"}
+{"depth": "overview", "mode": "autoplay", "speed": 1.0, "voice": "af_heart", "model": "prince-canuma/Kokoro-82M"}
 EOF
 ```
 
@@ -41,12 +42,12 @@ Speed controls narration playback rate:
 - `1.5` = fast (good for familiar code)
 - `2.0` = very fast (skimming)
 
-Pass speed to TTS via the `KOKORO_SPEED` env var:
+Pass speed to TTS via the `TTS_SPEED` env var:
 ```bash
-KOKORO_SPEED=1.5 ~/.claude/skills/explainer/scripts/speak.sh "text"
+TTS_SPEED=1.5 ~/.claude/skills/explainer/scripts/speak.sh "text"
 ```
 
 For autoplay, include speed in the presentation:
 ```bash
-KOKORO_SPEED=1.5 ~/.claude/skills/explainer/scripts/present.sh /tmp/claude-presentation.txt
+TTS_SPEED=1.5 ~/.claude/skills/explainer/scripts/present.sh /tmp/claude-presentation.txt
 ```

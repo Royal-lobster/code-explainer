@@ -15,7 +15,7 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VENV_PYTHON="$ROOT_DIR/.venv/bin/python3"
-KOKORO_SCRIPT="$SCRIPT_DIR/kokoro_speak.py"
+TTS_CLIENT="$SCRIPT_DIR/tts_client.py"
 
 # Parse flags
 STREAM_MODE=false
@@ -46,19 +46,19 @@ TAIL_PID=""
 STREAM_FIFO=""
 
 cleanup() {
-    killall afplay say 2>/dev/null
+    [ -f /tmp/tts-client.pid ] && kill "$(cat /tmp/tts-client.pid)" 2>/dev/null
+    killall say 2>/dev/null
     [ -n "$TAIL_PID" ] && kill "$TAIL_PID" 2>/dev/null
     [ -n "$STREAM_FIFO" ] && rm -f "$STREAM_FIFO"
     exit 0
 }
 trap cleanup SIGTERM SIGINT EXIT
 
-# Determine TTS method: Kokoro (high quality) or macOS say (fallback)
-use_kokoro=false
-if [ -x "$VENV_PYTHON" ] && [ -f "$KOKORO_SCRIPT" ]; then
-    use_kokoro=true
+use_tts=false
+if [ -x "$VENV_PYTHON" ] && [ -f "$TTS_CLIENT" ]; then
+    use_tts=true
     # Pre-start the server so model is loaded before first narration
-    "$VENV_PYTHON" "$KOKORO_SCRIPT" "" 2>/dev/null || true
+    "$VENV_PYTHON" "$TTS_CLIENT" "" 2>/dev/null || true
 fi
 
 # Process a single presentation line
@@ -79,8 +79,8 @@ process_line() {
     sleep 0.3
 
     # Speak narration — blocks until done (this IS the timer)
-    if $use_kokoro; then
-        "$VENV_PYTHON" "$KOKORO_SCRIPT" "$NARRATION"
+    if $use_tts; then
+        "$VENV_PYTHON" "$TTS_CLIENT" "$NARRATION"
     else
         say -v Samantha -r 190 "$NARRATION"
     fi

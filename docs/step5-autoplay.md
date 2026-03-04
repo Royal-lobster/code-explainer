@@ -14,7 +14,7 @@ In autoplay mode, the walkthrough plays automatically -- highlights move through
 
 Then launch the streaming presenter with `run_in_background: true`:
 ```bash
-KOKORO_SPEED={speed} ~/.claude/skills/explainer/scripts/present.sh --stream /tmp/claude-presentation.txt
+TTS_SPEED={speed} ~/.claude/skills/explainer/scripts/present.sh --stream /tmp/claude-presentation.txt
 ```
 
 Tell the user: "Starting walkthrough -- say 'pause' to stop or ask a question anytime."

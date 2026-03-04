@@ -4,7 +4,7 @@ set -e
 # ============================================================================
 # Claude Code Explainer — Setup Script
 # ============================================================================
-# Interactive code walkthrough skill with VS Code highlighting and Kokoro TTS.
+# Interactive code walkthrough skill with VS Code highlighting and TTS.
 # Works on macOS with Apple Silicon (M1/M2/M3/M4).
 #
 # Usage: ./setup.sh
@@ -55,7 +55,7 @@ ok "macOS detected"
 if [[ "$(uname -m)" == "arm64" ]]; then
     ok "Apple Silicon detected"
 else
-    warn "Intel Mac detected — Kokoro TTS will run on CPU (slower)"
+    warn "Intel Mac detected — TTS will run on CPU (slower)"
 fi
 
 # Editor CLI check (VS Code or Cursor)
@@ -117,7 +117,7 @@ else
 fi
 
 # ── Step 2: Create Python virtual environment ───────────────────────────────
-header "Setting up Python environment for Kokoro TTS"
+header "Setting up Python environment for TTS"
 
 if [[ -d "$VENV_DIR" ]]; then
     ok "Virtual environment already exists at $VENV_DIR"
@@ -132,23 +132,23 @@ fi
 
 VENV_PYTHON="$VENV_DIR/bin/python3"
 
-# ── Step 3: Install Kokoro TTS dependencies ─────────────────────────────────
-header "Installing Kokoro TTS (mlx-audio)"
+# ── Step 3: Install TTS dependencies ────────────────────────────────────────
+header "Installing TTS dependencies (mlx-audio + sounddevice)"
 
 echo "  This may take a few minutes on first install..."
 
 if $USE_UV; then
-    uv pip install --python "$VENV_PYTHON" pip mlx-audio 2>&1 | grep -E "^(Installed|Already|Resolved)" | head -5
+    uv pip install --python "$VENV_PYTHON" pip mlx-audio sounddevice 2>&1 | grep -E "^(Installed|Already|Resolved)" | head -5
 else
-    "$VENV_PYTHON" -m pip install --quiet mlx-audio 2>&1 | tail -3
+    "$VENV_PYTHON" -m pip install --quiet mlx-audio sounddevice 2>&1 | tail -3
 fi
-ok "mlx-audio installed"
+ok "TTS dependencies installed"
 
-# Verify Kokoro can import
+# Verify TTS can import
 if "$VENV_PYTHON" -c "from mlx_audio.tts.generate import generate_audio; print('ok')" 2>/dev/null | grep -q "ok"; then
-    ok "Kokoro TTS verified"
+    ok "TTS engine verified"
 else
-    warn "Kokoro import failed — TTS will fall back to macOS 'say' command"
+    warn "TTS import failed — TTS will fall back to macOS 'say' command"
 fi
 
 # ── Step 4: Build and install VS Code extension ─────────────────────────────
@@ -186,12 +186,12 @@ header "Setting up scripts"
 chmod +x "$SCRIPT_DIR/scripts/highlight.sh"
 chmod +x "$SCRIPT_DIR/scripts/speak.sh"
 chmod +x "$SCRIPT_DIR/scripts/present.sh"
-chmod +x "$SCRIPT_DIR/scripts/kokoro_speak.py"
+chmod +x "$SCRIPT_DIR/scripts/tts_client.py"
 chmod +x "$SCRIPT_DIR/setup.sh"
 ok "All scripts marked executable"
 
-# ── Step 6: Pre-download Kokoro model ───────────────────────────────────────
-header "Pre-downloading Kokoro voice model"
+# ── Step 6: Pre-download TTS model ──────────────────────────────────────────
+header "Pre-downloading TTS voice model"
 
 echo "  Downloading model (~330 MB on first run)..."
 if "$VENV_PYTHON" -c "
@@ -207,7 +207,7 @@ with tempfile.TemporaryDirectory() as d:
         verbose=False,
     )
 " 2>&1 | grep -v "^Fetching\|^$\|INFO\|pip\|spacy\|Collecting\|Downloading\|Installing\|Successfully\|✔" | tail -1; then
-    ok "Kokoro model downloaded and cached"
+    ok "TTS model downloaded and cached"
 else
     warn "Model download had issues — will retry on first use"
 fi
@@ -229,7 +229,7 @@ echo -e "  • ${GREEN}Autoplay${NC}     — highlights + voice narration play a
 echo -e "  • ${GREEN}Interactive${NC}  — step-by-step with optional TTS"
 echo ""
 echo -e "  ${BOLD}Voice config:${NC}"
-echo -e "  • Change voice: ${BLUE}export KOKORO_VOICE=am_adam${NC} (male)"
-echo -e "  • Change speed: ${BLUE}export KOKORO_SPEED=1.2${NC} (faster)"
+echo -e "  • Change voice: ${BLUE}export TTS_VOICE=am_adam${NC} (male)"
+echo -e "  • Change speed: ${BLUE}export TTS_SPEED=1.2${NC} (faster)"
 echo -e "  • Available: af_heart, af_bella, af_sarah, am_adam, am_michael, bf_emma, bm_george"
 echo ""

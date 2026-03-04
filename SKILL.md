@@ -16,12 +16,6 @@ Interactive code walkthrough skill. Scans the codebase for a feature, builds a s
 - User says "how does X work" about the codebase
 - User asks for a code walkthrough or tour
 
-## When NOT to Use
-
-- User wants to fix a bug (use systematic-debugging)
-- User wants to change code (use brainstorming/writing-plans)
-- User asks a quick factual question ("what port does the backend run on?")
-
 ## Checklist
 
 You MUST complete these steps in order:
@@ -44,12 +38,13 @@ You MUST complete these steps in order:
 |---------|-----|
 | Explaining too much at once | Stick to segment boundaries, keep explanations concise |
 | Not connecting segments | Always include a context line linking to previous segment |
-| Forgetting to highlight | ALWAYS run `highlight.sh` before explaining each segment |
+| Forgetting to highlight | In sidebar mode, highlights are automatic. In fallback mode, write to `~/.claude-highlight.json` |
 | Reading the entire file | Use offset+limit on Read to show only the segment |
 | Not waiting for user | Always pause after each segment for questions |
 | Segments too large | Overview: max 80 lines. Detailed: max 40 lines. Split if bigger |
-| Not speaking before explaining | If TTS is enabled, ALWAYS run speak.sh after writing the explanation |
+| Missing ttsText in segments | If TTS is enabled, include `ttsText` field in every segment — the sidebar handles playback |
 | Speaking markdown formatting | Strip all backticks, bold markers, line refs from spoken text |
 | Explaining obvious code | Standard loops, imports, null checks — skip them or say "this is standard X" and move on |
 | Missing the "why" | Always explain intent before mechanism — what problem does this code solve? |
 | Ignoring complexity tags | Use `[core]`/`[wiring]`/`[supporting]` from the plan to calibrate explanation depth |
+| Not checking for sidebar | Check if `~/.claude-explainer-port` exists to determine sidebar vs fallback mode |

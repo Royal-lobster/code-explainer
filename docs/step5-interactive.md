@@ -6,19 +6,25 @@ For Interactive modes, do these steps for EACH segment:
 
 ## 5a. Highlight in VS Code
 
-**MANDATORY: Run this BEFORE explaining each segment.** This writes a JSON file that the code-explainer VS Code extension picks up to open the file, highlight the line range, and scroll to it:
+**MANDATORY: Highlight code BEFORE explaining each segment.**
+
+If the sidebar extension is running (`~/.claude-explainer-port` exists), highlighting happens automatically when you send the walkthrough plan — the extension highlights each segment as it plays.
+
+For interactive (non-autoplay) mode, you can send a goto command to highlight a specific segment:
 
 ```bash
-~/.claude/skills/explainer/scripts/highlight.sh {absolute_filepath} {startLine} {endLine}
+~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "goto", "segmentId": {id}}'
 ```
 
-The highlight script writes `{"file":"...","start":N,"end":N}` to `~/.claude-highlight.json`. The VS Code extension watches this file and reacts by:
-1. Opening the file in the editor
-2. Selecting the specified line range
-3. Scrolling to center the selection in the viewport
-4. Applying a subtle gold background decoration so the range stands out visually
+**Fallback:** If the sidebar extension is not running, write the highlight JSON directly:
 
-**Important:** Always use absolute file paths. The VS Code extension must be installed (see `docs/setup.md`). If the extension is not installed, the highlight will have no effect -- the walkthrough still works, just without automatic navigation.
+```bash
+echo '{"file":"{absolute_filepath}","start":{startLine},"end":{endLine}}' > ~/.claude-highlight.json
+```
+
+The VS Code extension's file-watcher fallback will pick it up, opening the file and highlighting the range with a gold background.
+
+**Important:** Always use absolute file paths.
 
 ## 5b. Read the Segment
 
@@ -73,11 +79,9 @@ If TTS is enabled, create a **spoken version** of the explanation and pipe it to
 - Written: "On line 42, the `matchOrders()` method iterates through the `pendingOrders` array, calling `tryFill()` for each order that meets the price threshold."
 - Spoken: "The matchOrders method iterates through pending orders, calling tryFill for each order that meets the price threshold."
 
-**Execute via Bash with `run_in_background: true`** so speech does not block Claude:
+**If using the sidebar extension:** TTS is handled automatically by the extension's built-in TTS bridge. The sidebar streams audio via Web Audio API when a segment becomes active. No need to call any script — just include `ttsText` in your segments.
 
-```bash
-~/.claude/skills/explainer/scripts/speak.sh "The matchOrders method iterates through pending orders..."
-```
+**If sidebar is not available:** TTS is not supported in fallback mode (the old `speak.sh` has been removed).
 
 ## 5d. Wait for User
 

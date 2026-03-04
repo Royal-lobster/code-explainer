@@ -1,8 +1,8 @@
 {
 	"name": "code-explainer",
 	"displayName": "Code Explainer",
-	"description": "Highlights code ranges in VS Code for interactive code walkthroughs.",
-	"version": "0.1.0",
+	"description": "Interactive code walkthroughs with AI-powered voice narration and editor highlighting.",
+	"version": "0.2.0",
 	"publisher": "srujangurram",
 	"engines": {
 		"vscode": "^1.85.0"
@@ -10,14 +10,39 @@
 	"categories": ["Other"],
 	"activationEvents": ["*"],
 	"main": "./out/extension.js",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "code-explainer",
+					"title": "Code Explainer",
+					"icon": "media/icon.svg"
+				}
+			]
+		},
+		"views": {
+			"code-explainer": [
+				{
+					"type": "webview",
+					"id": "codeExplainer.sidebar",
+					"name": "Code Explainer"
+				}
+			]
+		}
+	},
 	"scripts": {
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"package": "vsce package --no-dependencies"
+		"compile": "esbuild src/extension.ts --bundle --platform=node --target=node18 --outfile=out/extension.js --external:vscode --format=cjs --sourcemap",
+		"watch": "npm run compile -- --watch",
+		"package": "npm run compile -- --minify && vsce package --no-dependencies"
+	},
+	"dependencies": {
+		"ws": "^8.16.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.0",
 		"@types/vscode": "^1.85.0",
+		"@types/ws": "^8.5.0",
+		"esbuild": "^0.20.0",
 		"typescript": "^5.3.0"
 	}
 }

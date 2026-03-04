@@ -1,73 +1,116 @@
-# Step 5-autoplay: Autoplay Mode (Streaming)
+# Step 5-autoplay: Autoplay Mode (Sidebar Streaming)
 
-In autoplay mode, the walkthrough plays automatically -- highlights move through the code while narration plays in sync. The user watches and listens.
+In autoplay mode, the walkthrough plays automatically in the VS Code sidebar -- highlights move through the code while TTS narration plays in sync. The user watches and listens via the sidebar webview.
 
-**Key design: streaming generation.** The presentation starts playing as soon as the first sub-blocks are written, while you continue generating the rest. This avoids making the user wait for the entire script to be generated upfront.
+**Key design: sidebar-driven playback.** Send the walkthrough plan to the VS Code sidebar extension via HTTP, which handles highlighting, TTS audio streaming, and auto-advancing through segments autonomously.
 
 ## How it works
 
-1. **Create the script file and start the streaming presenter:**
+1. **Check if the sidebar extension is available:**
 
 ```bash
-> /tmp/claude-presentation.txt
+if [ -f ~/.claude-explainer-port ]; then
+    # Sidebar extension is running — use HTTP API
+else
+    # Fall back to file-watcher protocol (see legacy section below)
+fi
 ```
 
-Then launch the streaming presenter with `run_in_background: true`:
+2. **Build the walkthrough plan as a JSON object:**
+
+```json
+{
+    "type": "set_plan",
+    "title": "Feature Name Walkthrough",
+    "segments": [
+        {
+            "id": 1,
+            "file": "/absolute/path/to/file.ts",
+            "start": 1,
+            "end": 20,
+            "title": "Module definition",
+            "explanation": "This is the **module definition**. It imports all the services needed for order matching.",
+            "ttsText": "This is the module definition. It imports all the services needed for order matching."
+        }
+    ]
+}
+```
+
+3. **Send the plan to the extension:**
+
+Write the JSON to a temp file and send via the helper script:
+
 ```bash
-TTS_SPEED={speed} ~/.claude/skills/explainer/scripts/present.sh --stream /tmp/claude-presentation.txt
+cat > /tmp/walkthrough-plan.json << 'EOF'
+{ "type": "set_plan", "title": "...", "segments": [...] }
+EOF
+~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
 
-Tell the user: "Starting walkthrough -- say 'pause' to stop or ask a question anytime."
+The sidebar immediately begins playback — highlighting code, showing explanations, and streaming TTS audio.
 
-2. **For each segment, read → generate → append:**
-
-Process segments **one at a time**. For each segment in the plan:
-
-a. **Read the segment** using the Read tool with offset and limit
-b. **Break into sub-blocks** of 5-15 lines (imports, constructor, method body, return statement, etc.)
-c. **Generate narration** for each sub-block (1-2 sentences, no markdown/code formatting)
-d. **Append sub-blocks to the script file:**
+4. **Wait for user actions (optional):**
 
 ```bash
-cat >> /tmp/claude-presentation.txt << 'BLOCK'
-/path/to/matching.module.ts|1|8|Here we have the module definition. It imports all the services needed for order matching.
-/path/to/matching.module.ts|10|20|The module decorator wires up providers and exports. Notice how the matching engine and orderbook manager are both registered here.
-BLOCK
+~/.claude/skills/explainer/scripts/explainer.sh wait-action 60
 ```
 
-The presenter picks up and plays each batch as soon as it's written. While the first segment's narrations play (~20-40 seconds), you generate the next segment's sub-blocks in parallel.
+This long-polls for user interactions (Go Deeper, Zoom Out). When the user clicks one, you receive a JSON response:
 
-3. **After the last segment, write the end marker:**
+```json
+{"type": "user_action", "action": "go_deeper", "segmentId": 3}
+```
+
+Handle by sending plan mutations:
 
 ```bash
-echo "END" >> /tmp/claude-presentation.txt
+# Insert deeper sub-segments after the current one
+~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "insert_after", "afterSegment": 3, "segments": [...]}'
+
+# Resume playback
+~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "resume"}'
 ```
 
-**Important:** Always use `cat >> ... << 'BLOCK'` (double `>>` to append, single-quoted delimiter for literal content). Each append is picked up immediately by the streaming presenter.
+5. **Check state anytime:**
 
-## Sub-block sizing guidelines
+```bash
+~/.claude/skills/explainer/scripts/explainer.sh state
+```
 
-- Each sub-block should be 5-15 lines -- small enough that the highlight visibly moves
-- Each narration should take 3-8 seconds to speak (roughly 10-25 words)
-- A 40-line segment should break into ~4-6 sub-blocks
-- A full walkthrough of 6 segments produces ~25-35 sub-blocks (~2-4 minutes total)
+6. **Stop the walkthrough:**
 
-## User controls during autoplay
+```bash
+~/.claude/skills/explainer/scripts/explainer.sh stop
+```
 
-- **"pause"** / **"stop"** -- Kill the background presentation: `killall present.sh say 2>/dev/null`
-- **"resume"** -- Not supported (restart from a specific segment instead)
-- **"restart from segment N"** -- Regenerate the presentation script starting from segment N and relaunch
-- Any question -- Kill the presentation, answer the question, then offer to resume
+## Segment generation guidelines
+
+- Each segment should be 5-40 lines of code
+- `explanation` field supports simple markdown (bold, inline code)
+- `ttsText` field must be plain text — no markdown, no line references, no file paths
+- TTS text should be 2-4 sentences, conversational style
+- The sidebar auto-advances after each segment's TTS finishes
 
 ## Autoplay narration style
 
 - Speak as if giving a live code tour to a colleague
 - "Here we have the module definition..." not "This is line 1 through 8 of matching.module.ts"
-- Connect sub-blocks: "Moving down, we see..." / "Next up is..." / "This feeds into..."
-- Keep it flowing -- the highlight movement + voice should feel continuous
-- **Lead with WHY before HOW**: "The system needs to validate prices before matching — here's how it does that" not "This function takes a price parameter and checks..."
+- Connect segments: "Moving down, we see..." / "Next up is..." / "This feeds into..."
+- **Lead with WHY before HOW**: "The system needs to validate prices before matching — here's how it does that"
 - **Ground in concrete scenarios**: "When a user places a market order, this is the code that runs"
-- **Breeze through boilerplate**: For `[wiring]` segments, don't narrate line-by-line. Instead: "This is standard module setup — the interesting part is coming up next" and move on quickly
-- **Vary pacing**: Slow down and add detail on `[core]` sub-blocks with dense or surprising logic. Speed through obvious patterns and setup code.
+- **Breeze through boilerplate**: For `[wiring]` segments: "This is standard module setup — the interesting part is coming up next"
+- **Vary pacing**: More detail on `[core]` sub-blocks. Speed through obvious patterns.
 
-See `docs/tts.md` for voice configuration, speed settings, and formatting rules.
+## User controls during autoplay
+
+The sidebar provides built-in controls:
+- **Play/Pause button** — pauses TTS and highlighting
+- **Next/Previous buttons** — skip between segments
+- **Go Deeper** — pauses and sends a user_action for Claude to generate sub-segments
+- **Zoom Out** — pauses and sends a user_action for Claude to provide higher-level view
+- **Speed buttons** — 1x, 1.25x, 1.5x, 2x TTS playback speed
+- **Volume slider + Mute** — audio control
+- **Voice selector** — choose TTS voice
+- **Outline** — click any segment to jump to it
+
+See `docs/tts.md` for voice configuration and formatting rules.

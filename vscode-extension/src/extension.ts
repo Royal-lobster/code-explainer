@@ -2,6 +2,16 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import { Walkthrough } from "./walkthrough";
+import { ExplainerServer } from "./server";
+import { SidebarProvider } from "./sidebar";
+import { highlightRange, clearHighlights, disposeHighlights } from "./highlight";
+import { streamTTS, isTTSAvailable } from "./tts-bridge";
+import type { ClaudeMessage, FromWebviewMessage, Segment } from "./types";
+
+// ── File-watcher fallback (backward compat) ──
+
+const HIGHLIGHT_FILE = path.join(os.homedir(), ".claude-highlight.json");
 
 interface HighlightRequest {
 	file: string;
@@ -9,23 +19,13 @@ interface HighlightRequest {
 	end: number;
 }
 
-const HIGHLIGHT_FILE = path.join(os.homedir(), ".claude-highlight.json");
-
-// Subtle gold/yellow background for highlighted ranges
-const highlightDecoration = vscode.window.createTextEditorDecorationType({
-	backgroundColor: "rgba(255, 213, 79, 0.18)",
-	isWholeLine: true,
-	overviewRulerColor: "rgba(255, 213, 79, 0.6)",
-	overviewRulerLane: vscode.OverviewRulerLane.Center,
-});
-
 let fileWatcher: fs.StatWatcher | undefined;
 
-export function activate(context: vscode.ExtensionContext): void {
-	// Process any existing highlight file on activation
-	processHighlightFile();
+function startFileWatcher(): void {
+	try {
+		processHighlightFile();
+	} catch {}
 
-	// Watch for changes to the highlight file
 	fileWatcher = fs.watchFile(
 		HIGHLIGHT_FILE,
 		{ interval: 300 },
@@ -35,31 +35,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 		},
 	);
-
-	context.subscriptions.push({
-		dispose: () => {
-			if (fileWatcher) {
-				fs.unwatchFile(HIGHLIGHT_FILE);
-				fileWatcher = undefined;
-			}
-			highlightDecoration.dispose();
-		},
-	});
 }
 
-export function deactivate(): void {
-	if (fileWatcher) {
-		fs.unwatchFile(HIGHLIGHT_FILE);
-		fileWatcher = undefined;
-	}
-}
-
-async function processHighlightFile(): Promise<void> {
+function processHighlightFile(): void {
 	let raw: string;
 	try {
 		raw = fs.readFileSync(HIGHLIGHT_FILE, "utf-8");
 	} catch {
-		// File doesn't exist yet or is unreadable -- nothing to do
 		return;
 	}
 
@@ -67,7 +49,6 @@ async function processHighlightFile(): Promise<void> {
 	try {
 		request = JSON.parse(raw);
 	} catch {
-		// Invalid JSON -- ignore silently
 		return;
 	}
 
@@ -75,45 +56,200 @@ async function processHighlightFile(): Promise<void> {
 		return;
 	}
 
-	try {
-		await highlightRange(request.file, request.start, request.end);
-	} catch (err) {
-		// Log but don't crash -- the file may reference a path that no longer exists
-		console.error("[claude-explainer] Failed to highlight range:", err);
-	}
+	highlightRange(request.file, request.start, request.end).catch((err) => {
+		console.error("[code-explainer] Fallback highlight failed:", err);
+	});
 }
 
-async function highlightRange(
-	filePath: string,
-	startLine: number,
-	endLine: number,
-): Promise<void> {
-	// Lines in VS Code are 0-indexed; the JSON uses 1-indexed line numbers
-	const zeroStart = Math.max(0, startLine - 1);
-	const zeroEnd = Math.max(zeroStart, endLine - 1);
+// ── Main activation ──
 
-	const uri = vscode.Uri.file(filePath);
-	const doc = await vscode.workspace.openTextDocument(uri);
-	const editor = await vscode.window.showTextDocument(doc, {
-		preview: false,
-		preserveFocus: false,
+let abortTTS: (() => void) | undefined;
+
+// TTS settings — updated by webview messages
+let ttsVoice = "af_heart";
+let ttsSpeed = 1.5;
+
+export function activate(context: vscode.ExtensionContext): void {
+	const walkthrough = new Walkthrough();
+	const sidebar = new SidebarProvider(context.extensionUri);
+	const server = new ExplainerServer(walkthrough);
+
+	// Register sidebar
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebar, {
+			webviewOptions: { retainContextWhenHidden: true },
+		}),
+	);
+
+	// Start file-watcher fallback
+	startFileWatcher();
+
+	// Start HTTP+WS server
+	server.start().then((port) => {
+		console.log(`[code-explainer] Server listening on port ${port}`);
 	});
 
-	// Build range spanning the requested lines (decoration only, no text selection)
-	const startPos = new vscode.Position(zeroStart, 0);
-	const endPos = new vscode.Position(
-		zeroEnd,
-		doc.lineAt(zeroEnd).text.length,
-	);
-	const range = new vscode.Range(startPos, endPos);
+	// ── Walkthrough events → sidebar + highlights ──
 
-	// Place cursor at start of range without selecting text
-	editor.selection = new vscode.Selection(startPos, startPos);
+	walkthrough.on("segment", (segment: Segment) => {
+		// Highlight code in editor
+		highlightRange(segment.file, segment.start, segment.end).catch(() => {});
 
-	// Scroll to center the range in the viewport
-	editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+		// Update sidebar
+		sidebar.updateState(walkthrough.getState());
 
-	// Apply the background decoration (clears any previous decoration first
-	// because setDecorations replaces the existing set for this type)
-	editor.setDecorations(highlightDecoration, [range]);
+		// Stop current TTS and start new
+		if (abortTTS) abortTTS();
+		sidebar.sendAudioStop();
+
+		if (segment.ttsText && isTTSAvailable()) {
+			abortTTS = streamTTS(
+				segment.ttsText,
+				{ voice: ttsVoice, speed: ttsSpeed },
+				(base64, sampleRate) => sidebar.sendAudioChunk(base64, sampleRate),
+				() => sidebar.sendAudioEnd(),
+				(err) => console.error("[code-explainer] TTS error:", err),
+			);
+		} else {
+			// No TTS — send audio_end immediately so auto-advance works after a delay
+			setTimeout(() => sidebar.sendAudioEnd(), 3000);
+		}
+	});
+
+	walkthrough.on("plan", () => {
+		sidebar.updateState(walkthrough.getState());
+		server.broadcastState();
+	});
+
+	walkthrough.on("status", () => {
+		sidebar.updateState(walkthrough.getState());
+		server.broadcastState();
+
+		// If paused, suspend audio
+		const state = walkthrough.getState();
+		if (state.status === "paused" || state.status === "stopped") {
+			if (abortTTS) {
+				abortTTS();
+				abortTTS = undefined;
+			}
+			sidebar.sendAudioStop();
+		}
+
+		if (state.status === "stopped") {
+			clearHighlights();
+		}
+	});
+
+	// ── Claude messages → walkthrough state ──
+
+	server.setMessageHandler((msg: ClaudeMessage) => {
+		switch (msg.type) {
+			case "set_plan":
+				walkthrough.setPlan(msg.title, msg.segments);
+				break;
+			case "insert_after":
+				walkthrough.insertAfter(msg.afterSegment, msg.segments);
+				break;
+			case "replace_segment":
+				walkthrough.replaceSegment(msg.id, msg.segment);
+				break;
+			case "remove_segments":
+				walkthrough.removeSegments(msg.ids);
+				break;
+			case "goto":
+				walkthrough.goto(msg.segmentId);
+				break;
+			case "resume":
+				walkthrough.play();
+				// Re-trigger current segment to restart TTS
+				const seg = walkthrough.getCurrentSegment();
+				if (seg) walkthrough.emit("segment", seg);
+				break;
+			case "stop":
+				walkthrough.stop();
+				break;
+		}
+	});
+
+	// ── Webview messages → walkthrough state + server ──
+
+	sidebar.setMessageHandler((msg: FromWebviewMessage) => {
+		switch (msg.type) {
+			case "play_pause":
+				walkthrough.togglePlayPause();
+				// If resuming, re-trigger segment for TTS
+				if (walkthrough.getState().status === "playing") {
+					const seg = walkthrough.getCurrentSegment();
+					if (seg) walkthrough.emit("segment", seg);
+				}
+				break;
+			case "next":
+				if (abortTTS) abortTTS();
+				sidebar.sendAudioStop();
+				walkthrough.next();
+				break;
+			case "prev":
+				if (abortTTS) abortTTS();
+				sidebar.sendAudioStop();
+				walkthrough.prev();
+				break;
+			case "goto_segment":
+				if (abortTTS) abortTTS();
+				sidebar.sendAudioStop();
+				walkthrough.goto(msg.segmentId);
+				break;
+			case "go_deeper": {
+				const segment = walkthrough.getCurrentSegment();
+				if (segment) {
+					walkthrough.pause();
+					server.queueAction({
+						type: "user_action",
+						action: "go_deeper",
+						segmentId: segment.id,
+					});
+				}
+				break;
+			}
+			case "zoom_out": {
+				const segment = walkthrough.getCurrentSegment();
+				if (segment) {
+					walkthrough.pause();
+					server.queueAction({
+						type: "user_action",
+						action: "zoom_out",
+						segmentId: segment.id,
+					});
+				}
+				break;
+			}
+			case "speed_change":
+				ttsSpeed = msg.speed;
+				break;
+			case "volume_change":
+				// Volume is handled in webview's Web Audio GainNode
+				break;
+			case "voice_change":
+				ttsVoice = msg.voice;
+				break;
+			case "mute_toggle":
+				// Mute is handled in webview's Web Audio GainNode
+				break;
+		}
+	});
+
+	// ── Cleanup ──
+
+	context.subscriptions.push({
+		dispose: () => {
+			server.stop();
+			if (fileWatcher) {
+				fs.unwatchFile(HIGHLIGHT_FILE);
+				fileWatcher = undefined;
+			}
+			if (abortTTS) abortTTS();
+			disposeHighlights();
+		},
+	});
 }
+
+export function deactivate(): void {}

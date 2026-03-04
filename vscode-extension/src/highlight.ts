@@ -108,6 +108,25 @@ export async function highlightRange(
 	editor.setDecorations(activeDecoration, []);
 }
 
+// ── Smooth scrolling management ──
+
+let originalSmoothScrolling: boolean | undefined;
+
+export async function enableSmoothScrolling(): Promise<void> {
+	const config = vscode.workspace.getConfiguration("editor");
+	originalSmoothScrolling = config.get<boolean>("smoothScrolling");
+	if (!originalSmoothScrolling) {
+		await config.update("smoothScrolling", true, vscode.ConfigurationTarget.Global);
+	}
+}
+
+export async function restoreSmoothScrolling(): Promise<void> {
+	if (originalSmoothScrolling === undefined) return;
+	const config = vscode.workspace.getConfiguration("editor");
+	await config.update("smoothScrolling", originalSmoothScrolling, vscode.ConfigurationTarget.Global);
+	originalSmoothScrolling = undefined;
+}
+
 export function clearHighlights(): void {
 	for (const editor of vscode.window.visibleTextEditors) {
 		editor.setDecorations(segmentDecoration, []);

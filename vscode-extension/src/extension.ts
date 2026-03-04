@@ -5,7 +5,7 @@ import * as os from "os";
 import { Walkthrough } from "./walkthrough";
 import { ExplainerServer } from "./server";
 import { SidebarProvider } from "./sidebar";
-import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights } from "./highlight";
+import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights, enableSmoothScrolling, restoreSmoothScrolling } from "./highlight";
 import { streamTTS, isTTSAvailable } from "./tts-bridge";
 import type { AgentMessage, FromWebviewMessage, Segment, Highlight } from "./types";
 
@@ -200,6 +200,9 @@ export function activate(context: vscode.ExtensionContext): void {
 	}
 
 	walkthrough.on("segment", (segment: Segment) => {
+		// Enable smooth scrolling for the walkthrough
+		enableSmoothScrolling().catch(() => {});
+
 		// Increment generation to invalidate any in-flight highlight loop
 		highlightLoopGeneration++;
 		if (currentChunkAbort) {
@@ -242,6 +245,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		if (state.status === "stopped") {
 			clearHighlights();
+			restoreSmoothScrolling().catch(() => {});
 		}
 	});
 
@@ -363,6 +367,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				fileWatcher = undefined;
 			}
 			if (abortTTS) abortTTS();
+			restoreSmoothScrolling().catch(() => {});
 			disposeHighlights();
 		},
 	});

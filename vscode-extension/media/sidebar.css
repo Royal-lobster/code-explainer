@@ -275,29 +275,24 @@ body {
 	font-size: 0.9em;
 }
 
-/* ── Action buttons ── */
+/* ── Agent hint ── */
 
-.action-buttons {
+.agent-hint {
 	display: flex;
+	align-items: center;
 	gap: 8px;
 	margin-bottom: 16px;
-}
-
-.action-buttons button {
-	flex: 1;
-	background: var(--vscode-button-secondaryBackground);
-	color: var(--vscode-button-secondaryForeground);
-	border: 1px solid transparent;
+	padding: 10px 12px;
+	background: var(--vscode-textBlockQuote-background);
+	border-left: 3px solid var(--vscode-textLink-foreground);
 	border-radius: 4px;
-	padding: 6px 10px;
 	font-size: 0.85em;
-	cursor: pointer;
-	transition: background 0.15s ease, border-color 0.15s ease;
+	color: var(--vscode-descriptionForeground);
 }
 
-.action-buttons button:hover {
-	background: var(--vscode-button-secondaryHoverBackground);
-	border-color: var(--vscode-panel-border);
+.agent-hint-icon {
+	font-size: 1.1em;
+	flex-shrink: 0;
 }
 
 /* ── Outline ── */

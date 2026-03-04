@@ -77,7 +77,7 @@ export interface StateMessage {
 
 export interface UserActionMessage {
 	type: "user_action";
-	action: "go_deeper" | "zoom_out" | "ask_question";
+	action: "ask_question";
 	segmentId: number;
 	question?: string;
 }
@@ -138,14 +138,6 @@ export interface WebviewGotoSegmentMessage {
 	segmentId: number;
 }
 
-export interface WebviewGoDeeperMessage {
-	type: "go_deeper";
-}
-
-export interface WebviewZoomOutMessage {
-	type: "zoom_out";
-}
-
 export interface WebviewSpeedChangeMessage {
 	type: "speed_change";
 	speed: number;
@@ -178,8 +170,6 @@ export type FromWebviewMessage =
 	| WebviewNextMessage
 	| WebviewPrevMessage
 	| WebviewGotoSegmentMessage
-	| WebviewGoDeeperMessage
-	| WebviewZoomOutMessage
 	| WebviewSpeedChangeMessage
 	| WebviewVolumeChangeMessage
 	| WebviewVoiceChangeMessage

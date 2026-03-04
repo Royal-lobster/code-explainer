@@ -1,11 +1,10 @@
 #!/bin/bash
-# ~/.claude/skills/explainer/speak.sh
-# Text-to-speech using Kokoro (mlx-audio) with fallback to macOS `say`.
+# Text-to-speech using Kokoro TTS server (fast) with fallback to macOS `say`.
 # Usage: speak.sh "text to speak"
 # Or:    echo "text" | speak.sh
 #
-# Kills any previous speech before starting new speech.
-# Runs in background so it does not block the caller.
+# On first call, starts the Kokoro server daemon (model loads once ~5s).
+# Subsequent calls are near-instant (<500ms).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -23,7 +22,7 @@ if [ -z "$TEXT" ]; then
     exit 0
 fi
 
-# Try Kokoro (mlx-audio) first, fall back to macOS say
+# Try Kokoro (via persistent server) first, fall back to macOS say
 if [ -x "$VENV_PYTHON" ] && [ -f "$KOKORO_SCRIPT" ]; then
     "$VENV_PYTHON" "$KOKORO_SCRIPT" "$TEXT" &
 else

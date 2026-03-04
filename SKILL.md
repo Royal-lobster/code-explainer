@@ -51,11 +51,56 @@ You MUST complete these steps in order:
 5. **Execute walkthrough** -- segment by segment with VS Code navigation
 6. **Wrap up** -- summarize key takeaways
 
+## User Config
+
+Preferences are saved at `~/.config/code-explainer/config.json`. On first use, the file won't exist — ask the user their preferences and save them. On subsequent uses, load the saved config and **skip Step 1** (don't re-ask). The user can change settings anytime by saying "change settings", "change speed", "change voice", etc.
+
+**Config schema:**
+```json
+{
+  "depth": "overview",
+  "mode": "autoplay",
+  "speed": 1.0,
+  "voice": "af_heart"
+}
+```
+
+**Before Step 1**, check if config exists:
+```bash
+cat ~/.config/code-explainer/config.json 2>/dev/null
+```
+
+If it exists, load the values and skip to Step 2. Tell the user: "Using your saved preferences (depth: overview, mode: autoplay, speed: 1.0x). Say 'change settings' anytime to adjust."
+
+If it doesn't exist, proceed with Step 1 below. After getting answers, save the config:
+```bash
+mkdir -p ~/.config/code-explainer
+cat > ~/.config/code-explainer/config.json << 'EOF'
+{"depth": "overview", "mode": "autoplay", "speed": 1.0, "voice": "af_heart"}
+EOF
+```
+
+**Speed** controls narration playback rate:
+- `1.0` = normal speed
+- `1.25` = slightly faster
+- `1.5` = fast (good for familiar code)
+- `2.0` = very fast (skimming)
+
+Pass speed to TTS via the `KOKORO_SPEED` env var:
+```bash
+KOKORO_SPEED=1.5 ~/.claude/skills/explainer/scripts/speak.sh "text"
+```
+
+For autoplay, include speed in the presentation:
+```bash
+KOKORO_SPEED=1.5 ~/.claude/skills/explainer/scripts/present.sh /tmp/claude-presentation.txt
+```
+
 ## Step 1: Assess Familiarity
 
-Ask the user ONE question using AskUserQuestion:
+Ask the user using AskUserQuestion (combine into one question set):
 
-**"What depth level do you want for this explanation?"**
+**Question 1: "What depth level do you want for this explanation?"**
 
 | Level | Description | Segment style |
 |-------|-------------|---------------|
@@ -65,9 +110,7 @@ Ask the user ONE question using AskUserQuestion:
 
 Default to **Overview** if the user seems unfamiliar with the code.
 
-Then ask a second question:
-
-**"How do you want the walkthrough delivered?"**
+**Question 2: "How do you want the walkthrough delivered?"**
 
 | Mode | Description |
 |------|-------------|
@@ -75,7 +118,20 @@ Then ask a second question:
 | **Interactive + TTS** | Step-by-step with voice. Claude highlights, explains in text + voice, then waits for "next". You control the pace. |
 | **Interactive (text only)** | Step-by-step, text only. Claude highlights, explains in text, waits for "next". |
 
-Default to **Interactive (text only)** if the user doesn't answer. Track the chosen mode throughout the session.
+Default to **Interactive (text only)** if the user doesn't answer.
+
+**Question 3: "What narration speed?"**
+
+| Speed | Description |
+|-------|-------------|
+| **1x** (default) | Normal pace, good for unfamiliar code |
+| **1.25x** | Slightly faster |
+| **1.5x** | Fast, good for familiar code |
+| **2x** | Very fast, skim mode |
+
+Default to **1x**.
+
+After getting answers, save to config file (see User Config section above). Track all settings throughout the session.
 
 ## Step 2: Scan the Codebase (via sub-agent)
 
@@ -350,12 +406,15 @@ Claude: [runs: highlight.sh /path/to/orderbook-manager.service.ts 1 40]
 ## TTS Notes
 
 - TTS uses **Kokoro-82M** (via mlx-audio) -- #1 ranked open-source TTS, runs locally on Apple Silicon
+- Uses a **persistent server** (`kokoro_server.py`) that loads the model once. First call takes ~5s (model load), subsequent calls are near-instant (<500ms generation)
+- The server starts automatically on first TTS call and stays running in the background
 - Falls back to macOS `say` if Kokoro is not installed
 - Speech is **non-blocking** -- Claude continues while audio plays (use `run_in_background: true` on the Bash call)
 - Previous speech is **auto-canceled** when a new segment starts (the script kills `afplay`/`say` before speaking)
 - **Strip all markdown** from spoken text: no backticks, no `**bold**`, no `line 42` references, no file paths
 - Keep spoken explanations **shorter than written** ones -- aim for 2-4 sentences max
 - The spoken text should sound **natural and conversational**, not like reading documentation
-- Voice: `af_heart` (American English female) -- configurable via `KOKORO_VOICE` env var
+- Voice: `af_heart` (American English female) -- configurable via `KOKORO_VOICE` env var or user config
 - Available voices: `af_heart`, `af_bella`, `af_sarah`, `am_adam`, `am_michael`, `bf_emma`, `bm_george` (a=American, b=British, f=female, m=male)
-- Speed: configurable via `KOKORO_SPEED` env var (default 1.0)
+- Speed: configurable via `KOKORO_SPEED` env var or user config (default 1.0). Supports 1.0x, 1.25x, 1.5x, 2.0x
+- **Always pass the user's speed setting** from config to the TTS scripts via `KOKORO_SPEED` env var

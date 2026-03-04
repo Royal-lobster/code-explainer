@@ -31,6 +31,8 @@ trap cleanup SIGTERM SIGINT
 use_kokoro=false
 if [ -x "$VENV_PYTHON" ] && [ -f "$KOKORO_SCRIPT" ]; then
     use_kokoro=true
+    # Pre-start the server so model is loaded before first narration
+    "$VENV_PYTHON" "$KOKORO_SCRIPT" "" 2>/dev/null || true
 fi
 
 # Read and execute each step
@@ -39,10 +41,10 @@ while IFS='|' read -r FILE START END NARRATION; do
     [ -z "$FILE" ] && continue
     [[ "$FILE" == \#* ]] && continue
 
-    # Highlight the range in VS Code
+    # Highlight the range in the editor
     "$SCRIPT_DIR/highlight.sh" "$FILE" "$START" "$END"
 
-    # Small pause for VS Code to react
+    # Small pause for editor to react
     sleep 0.3
 
     # Speak narration — blocks until done (this IS the timer)

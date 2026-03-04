@@ -4,7 +4,6 @@
 	"description": "Highlights code ranges in VS Code for interactive code walkthroughs.",
 	"version": "0.1.0",
 	"publisher": "srujangurram",
-	"icon": "../assets/icon.png",
 	"engines": {
 		"vscode": "^1.85.0"
 	},

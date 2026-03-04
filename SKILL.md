@@ -24,7 +24,7 @@ You MUST complete these steps in order:
 2. **Scan the codebase** — Read `docs/step2-scan.md` for sub-agent dispatch instructions.
 3. **Build walkthrough plan** — Read `docs/step3-plan.md` for plan format and presentation.
 4. **Present plan** — (covered in `docs/step3-plan.md`)
-5. **Execute walkthrough** — Read `docs/step5-interactive.md` for interactive mode, or `docs/step5-autoplay.md` for autoplay mode. Both reference `docs/tts.md` for TTS details.
+5. **Execute walkthrough** — Read `docs/step5-interactive.md` for interactive mode, `docs/step5-autoplay.md` for autoplay mode, or `docs/step5-podcast.md` for podcast mode. All reference `docs/tts.md` for TTS details.
 6. **Wrap up** — Summarize key takeaways:
    - **Summary** — 3-5 bullet points of the key takeaways
    - **Architecture note** — how this feature fits into the broader system

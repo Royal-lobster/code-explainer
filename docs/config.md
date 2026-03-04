@@ -7,7 +7,7 @@ Preferences are saved at `~/.config/code-explainer/config.json`. On first use, t
 ```json
 {
   "depth": "overview",
-  "mode": "autoplay",
+  "mode": "autoplay | interactive+tts | interactive | podcast",
   "speed": 1.0,
   "voice": "af_heart",
   "model": "prince-canuma/Kokoro-82M"

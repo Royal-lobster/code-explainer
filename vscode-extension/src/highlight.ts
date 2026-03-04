@@ -1,21 +1,19 @@
 import * as vscode from "vscode";
 
-// Faint highlight for non-active segment lines: dimmed with subtle blue tint
+// Non-active segment lines: dimmed out
 const segmentDecoration = vscode.window.createTextEditorDecorationType({
-	opacity: "0.45",
+	opacity: "0.35",
 	isWholeLine: true,
-	backgroundColor: "rgba(100, 200, 130, 0.06)",
-	overviewRulerColor: "rgba(100, 200, 130, 0.25)",
+	overviewRulerColor: "rgba(255, 255, 255, 0.15)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
-// Active sub-highlight: distinct background + gold left border
+// Active sub-highlight: full opacity with left border accent
 const activeDecoration = vscode.window.createTextEditorDecorationType({
 	isWholeLine: true,
-	backgroundColor: "rgba(255, 190, 60, 0.12)",
 	borderWidth: "0 0 0 3px",
 	borderStyle: "solid",
-	borderColor: "rgba(255, 190, 60, 0.7)",
+	borderColor: "rgba(255, 190, 60, 0.8)",
 	overviewRulerColor: "rgba(255, 190, 60, 0.5)",
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });

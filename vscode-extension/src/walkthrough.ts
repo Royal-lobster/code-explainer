@@ -123,6 +123,14 @@ export class Walkthrough extends EventEmitter {
 		return true;
 	}
 
+	setHighlightIndex(index: number): void {
+		this.state.currentHighlightIndex = index;
+	}
+
+	getHighlightIndex(): number {
+		return this.state.currentHighlightIndex;
+	}
+
 	// ── Plan mutations ──
 
 	insertAfter(afterSegmentId: number, newSegments: Segment[]): void {

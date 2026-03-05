@@ -148,14 +148,22 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	/** Pre-warm the TTS server then emit the current segment. */
 	function preWarmAndEmit(): void {
+		preWarmAndResume(0);
+	}
+
+	/** Pre-warm the TTS server then resume playback from a specific highlight index. */
+	function preWarmAndResume(startHighlight: number): void {
 		const seg = walkthrough.getCurrentSegment();
 		if (!seg) return;
-		const gen = ++highlightLoopGeneration;
+		if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+		sidebar.sendAudioStop();
 		sidebar.sendServerLoading(true);
 		ensureServer().then(() => {
 			sidebar.sendServerLoading(false);
-			if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
-				walkthrough.emit("segment", seg);
+			if (walkthrough.getState().status === "playing") {
+				playSegmentHighlights(seg, walkthrough, sidebar, startHighlight).catch((err) => {
+					console.error("[code-explainer] Highlight loop error:", err);
+				});
 			}
 		}).catch((err) => {
 			sidebar.sendServerLoading(false);
@@ -167,6 +175,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		segment: Segment,
 		wt: Walkthrough,
 		sb: SidebarProvider,
+		startFromHighlight = 0,
 	): Promise<void> {
 		const myGeneration = ++highlightLoopGeneration;
 
@@ -206,9 +215,10 @@ export function activate(context: vscode.ExtensionContext): void {
 		await highlightSegmentRange(segment.file, segment.start, segment.end).catch(() => {});
 		sb.updateState(wt.getState());
 
-		for (let i = 0; i < highlights.length; i++) {
+		for (let i = startFromHighlight; i < highlights.length; i++) {
 			if (myGeneration !== highlightLoopGeneration) return;
 
+			wt.setHighlightIndex(i);
 			sb.sendHighlightAdvance(i, highlights.length);
 
 			const chunk = playHighlightChunk(
@@ -306,11 +316,12 @@ export function activate(context: vscode.ExtensionContext): void {
 			case "goto":
 				walkthrough.navigateTo(msg.segmentId);
 				break;
-			case "resume":
+			case "resume": {
+				const resumeHighlightIdx = walkthrough.getHighlightIndex();
 				walkthrough.play();
-				// Pre-warm TTS server then re-trigger segment
-				preWarmAndEmit();
+				preWarmAndResume(resumeHighlightIdx);
 				break;
+			}
 			case "stop":
 				sidebar.sendAudioStop();
 				walkthrough.stop();
@@ -324,11 +335,43 @@ export function activate(context: vscode.ExtensionContext): void {
 		switch (msg.type) {
 			case "play_pause":
 				walkthrough.togglePlayPause();
-				// If resuming, pre-warm TTS server then re-trigger segment
+				// If resuming, pre-warm TTS server then resume from current highlight
 				if (walkthrough.getState().status === "playing") {
-					preWarmAndEmit();
+					preWarmAndResume(walkthrough.getHighlightIndex());
 				}
 				break;
+			case "next_highlight": {
+				const seg = walkthrough.getCurrentSegment();
+				if (seg?.highlights && seg.highlights.length > 0) {
+					const nextIdx = Math.min(walkthrough.getHighlightIndex() + 1, seg.highlights.length - 1);
+					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+					if (abortTTS) abortTTS();
+					sidebar.sendAudioStop();
+					walkthrough.setHighlightIndex(nextIdx);
+					if (walkthrough.getState().status === "playing") {
+						playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
+							console.error("[code-explainer] Highlight loop error:", err);
+						});
+					}
+				}
+				break;
+			}
+			case "prev_highlight": {
+				const seg = walkthrough.getCurrentSegment();
+				if (seg?.highlights && seg.highlights.length > 0) {
+					const prevIdx = Math.max(walkthrough.getHighlightIndex() - 1, 0);
+					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+					if (abortTTS) abortTTS();
+					sidebar.sendAudioStop();
+					walkthrough.setHighlightIndex(prevIdx);
+					if (walkthrough.getState().status === "playing") {
+						playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
+							console.error("[code-explainer] Highlight loop error:", err);
+						});
+					}
+				}
+				break;
+			}
 			case "next":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 				if (abortTTS) abortTTS();

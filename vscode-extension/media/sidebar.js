@@ -288,11 +288,18 @@ function renderHighlightProgress() {
 
 	const idx = state.segments.findIndex((s) => s.id === state.currentSegment);
 
+	const prevHighlightBtn = document.getElementById("btn-prev-highlight");
+	const nextHighlightBtn = document.getElementById("btn-next-highlight");
+
 	if (totalHighlights > 1) {
 		counter.textContent =
 			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
+		prevHighlightBtn.style.display = "";
+		nextHighlightBtn.style.display = "";
 	} else {
 		counter.textContent = `${idx + 1}/${state.segments.length}`;
+		prevHighlightBtn.style.display = "none";
+		nextHighlightBtn.style.display = "none";
 	}
 }
 
@@ -376,6 +383,14 @@ document.getElementById("btn-prev").addEventListener("click", () => {
 	vscode.postMessage({ type: "prev" });
 });
 
+document.getElementById("btn-next-highlight").addEventListener("click", () => {
+	vscode.postMessage({ type: "next_highlight" });
+});
+
+document.getElementById("btn-prev-highlight").addEventListener("click", () => {
+	vscode.postMessage({ type: "prev_highlight" });
+});
+
 document.getElementById("btn-restart").addEventListener("click", () => {
 	vscode.postMessage({ type: "restart" });
 });
@@ -447,6 +462,7 @@ window.addEventListener("message", (event) => {
 			totalHighlights = 0;
 			awaitingHighlightAdvance = state.status === "playing";
 			render();
+			renderHighlightProgress();
 			break;
 
 		case "audio_chunk": {

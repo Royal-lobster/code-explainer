@@ -130,6 +130,22 @@ body {
 	transform: scale(0.95);
 }
 
+/* ── Sub-segment (highlight) buttons ── */
+
+.controls .highlight-btn {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--vscode-button-secondaryBackground);
+	opacity: 0.7;
+	transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.controls .highlight-btn:hover {
+	opacity: 1;
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
 /* ── Play button (circular) ── */
 
 .controls .play-btn {

@@ -167,6 +167,14 @@ export interface WebviewRestartMessage {
 	type: "restart";
 }
 
+export interface WebviewNextHighlightMessage {
+	type: "next_highlight";
+}
+
+export interface WebviewPrevHighlightMessage {
+	type: "prev_highlight";
+}
+
 export interface WebviewPlaybackCompleteMessage {
 	type: "playback_complete";
 }
@@ -181,4 +189,6 @@ export type FromWebviewMessage =
 	| WebviewVoiceChangeMessage
 	| WebviewMuteToggleMessage
 	| WebviewRestartMessage
-	| WebviewPlaybackCompleteMessage;
+	| WebviewPlaybackCompleteMessage
+	| WebviewNextHighlightMessage
+	| WebviewPrevHighlightMessage;

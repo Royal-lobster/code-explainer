@@ -352,6 +352,8 @@ export function activate(context: vscode.ExtensionContext): void {
 					const curIdx = walkthrough.getHighlightIndex();
 					if (curIdx >= seg.highlights.length - 1) {
 						// At last sub-segment — advance to next segment's first highlight
+						const nextSegIdx = walkthrough.getState().currentIndex + 1;
+						if (nextSegIdx >= walkthrough.getState().segments.length) break; // At walkthrough end
 						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 						if (abortTTS) { abortTTS(); abortTTS = undefined; }
 						sidebar.sendAudioStop();
@@ -381,9 +383,10 @@ export function activate(context: vscode.ExtensionContext): void {
 					const curIdx = walkthrough.getHighlightIndex();
 					if (curIdx <= 0) {
 						// At first sub-segment — go to previous segment's last highlight
-						const prevSegIdx = walkthrough.getState().currentIndex - 1;
+						const wtState = walkthrough.getState();
+						const prevSegIdx = wtState.currentIndex - 1;
 						if (prevSegIdx < 0) break; // Already at the very first segment
-						const prevSeg = walkthrough.getState().segments[prevSegIdx];
+						const prevSeg = wtState.segments[prevSegIdx];
 						const prevHighlightCount = prevSeg?.highlights?.length ?? 0;
 						if (prevHighlightCount > 0) {
 							pendingHighlightStart = prevHighlightCount - 1;

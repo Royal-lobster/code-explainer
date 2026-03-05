@@ -118,16 +118,15 @@ How does the WebSocket gateway handle events?
 
 ```
 1. 💬 You ask to explain a feature
-2. 🔍 AI scans the codebase (dispatches a lightweight sub-agent)
-3. 📋 Builds an ordered walkthrough plan with complexity tags
-4. ✅ You approve or adjust the plan
-5. 🔄 For each segment:
-   ├── 📡 Sends the plan to the sidebar via HTTP API
-   ├── 🎯 Highlights lines in your editor
-   ├── 📖 Reads the code and explains the segment
-   ├── 🔊 Streams TTS audio to the sidebar (if enabled)
-   └── ⏸️  Waits for your input (or auto-advances in walkthrough mode)
-6. 📝 Summarizes key takeaways
+2. 🎯 Asks your familiarity level (overview / detailed / focused) and delivery mode
+3. 🔍 Dispatches a lightweight sub-agent to scan the codebase
+4. 📋 Builds an ordered walkthrough plan with complexity tags ([core], [wiring], [supporting])
+5. ✅ You approve, reorder, or adjust the plan
+6. 🔄 Executes the walkthrough based on your chosen mode:
+   Walkthrough — sends the full plan to the sidebar, which drives playback with TTS
+   Read        — highlights code segment-by-segment, explains in terminal, waits for input
+   Podcast     — generates a single audio file of the entire walkthrough
+7. 📝 Summarizes key takeaways
 ```
 
 ## 🎬 Modes

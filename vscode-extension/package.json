@@ -20,7 +20,9 @@
 			{ "command": "codeExplainer.prevSegment", "title": "Code Explainer: Previous Segment" },
 			{ "command": "codeExplainer.stop", "title": "Code Explainer: Stop Walkthrough" },
 			{ "command": "codeExplainer.speedUp", "title": "Code Explainer: Speed Up" },
-			{ "command": "codeExplainer.speedDown", "title": "Code Explainer: Speed Down" }
+			{ "command": "codeExplainer.speedDown", "title": "Code Explainer: Speed Down" },
+			{ "command": "codeExplainer.saveWalkthrough", "title": "Code Explainer: Save Walkthrough" },
+			{ "command": "codeExplainer.loadWalkthrough", "title": "Code Explainer: Load Walkthrough" }
 		],
 		"keybindings": [
 			{ "command": "codeExplainer.togglePlayPause", "key": "ctrl+shift+space", "when": "codeExplainer.walkthroughActive" },

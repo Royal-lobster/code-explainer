@@ -5,6 +5,7 @@ import * as os from "os";
 import { Walkthrough } from "./walkthrough";
 import { ExplainerServer } from "./server";
 import { SidebarProvider } from "./sidebar";
+import { WalkthroughStorage } from "./storage";
 import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights, enableSmoothScrolling, restoreSmoothScrolling } from "./highlight";
 import { streamTTS, isTTSAvailable, ensureServer, setWorkspaceRoot } from "./tts-bridge";
 import type { AgentMessage, FromWebviewMessage, Segment, Highlight } from "./types";
@@ -121,6 +122,12 @@ export function activate(context: vscode.ExtensionContext): void {
 	const walkthrough = new Walkthrough();
 	const sidebar = new SidebarProvider(context.extensionUri);
 	const server = new ExplainerServer(walkthrough);
+
+	let storage: WalkthroughStorage | undefined;
+	if (wsFolder) {
+		storage = new WalkthroughStorage(wsFolder);
+		server.setStorage(storage);
+	}
 
 	// Register sidebar
 	context.subscriptions.push(
@@ -397,6 +404,60 @@ export function activate(context: vscode.ExtensionContext): void {
 			const nextIdx = Math.max(idx - 1, 0);
 			ttsSpeed = speedPresets[nextIdx];
 			vscode.window.setStatusBarMessage(`Speed: ${ttsSpeed}x`, 2000);
+		}),
+		vscode.commands.registerCommand('codeExplainer.saveWalkthrough', async () => {
+			if (!storage) {
+				vscode.window.showErrorMessage("No workspace folder open");
+				return;
+			}
+			const state = walkthrough.getState();
+			if (state.segments.length === 0) {
+				vscode.window.showWarningMessage("No active walkthrough to save");
+				return;
+			}
+			const defaultName = WalkthroughStorage.slugify(state.title);
+			const name = await vscode.window.showInputBox({
+				prompt: "Walkthrough name",
+				value: defaultName,
+				validateInput: (v) => v.trim() ? null : "Name cannot be empty",
+			});
+			if (!name) return;
+			if (await storage.exists(name)) {
+				const overwrite = await vscode.window.showWarningMessage(
+					`"${name}" already exists. Overwrite?`,
+					"Overwrite", "Cancel"
+				);
+				if (overwrite !== "Overwrite") return;
+			}
+			const filePath = await storage.save(state.title, state.segments, name);
+			vscode.window.showInformationMessage(`Walkthrough saved to .walkthroughs/${name}.json`);
+		}),
+		vscode.commands.registerCommand('codeExplainer.loadWalkthrough', async () => {
+			if (!storage) {
+				vscode.window.showErrorMessage("No workspace folder open");
+				return;
+			}
+			const items = await storage.list();
+			if (items.length === 0) {
+				vscode.window.showInformationMessage("No saved walkthroughs found in .walkthroughs/");
+				return;
+			}
+			const pick = await vscode.window.showQuickPick(
+				items.map((item) => ({
+					label: item.title,
+					description: item.name,
+					name: item.name,
+				})),
+				{ placeHolder: "Select a walkthrough to load" }
+			);
+			if (!pick) return;
+			const data = await storage.load((pick as any).name);
+			if (!data) {
+				vscode.window.showErrorMessage("Failed to load walkthrough");
+				return;
+			}
+			walkthrough.setPlan(data.title, data.segments);
+			sidebar.reveal();
 		}),
 	);
 

@@ -147,9 +147,15 @@ body {
 	pointer-events: auto;
 }
 
-.controls .highlight-btn.visible:hover {
+.controls .highlight-btn.visible:hover:not(:disabled) {
 	opacity: 1;
 	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.controls .highlight-btn.visible:disabled {
+	opacity: 0.25;
+	cursor: default;
+	pointer-events: none;
 }
 
 /* ── Play button (circular) ── */

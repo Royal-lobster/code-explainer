@@ -103,6 +103,11 @@ function playAudioChunk(base64Data, sampleRate) {
 
 function stopAudio() {
 	for (const source of activeSources) {
+		// Clear onended BEFORE stopping to prevent stale playback_complete messages.
+		// Without this, wrapped onended callbacks (from waitForActiveSourcesToFinish)
+		// fire and send playback_complete which can resolve the NEXT chunk's promise,
+		// causing the highlight loop to skip subsegments and leak orphaned TTS streams.
+		source.onended = null;
 		try { source.stop(); } catch {}
 	}
 	activeSources = [];
@@ -296,6 +301,9 @@ function renderHighlightProgress() {
 			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
 		prevHighlightBtn.classList.add("visible");
 		nextHighlightBtn.classList.add("visible");
+		// Disable at boundaries — subsegment buttons don't cross segment boundaries
+		prevHighlightBtn.disabled = currentHighlightIndex <= 0;
+		nextHighlightBtn.disabled = currentHighlightIndex >= totalHighlights - 1;
 	} else {
 		counter.textContent = `${idx + 1}/${state.segments.length}`;
 		prevHighlightBtn.classList.remove("visible");

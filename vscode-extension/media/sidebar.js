@@ -625,6 +625,17 @@ window.addEventListener("message", (event) => {
 					explEl.innerHTML = simpleMarkdown(msg.explanation);
 					explEl.classList.remove("fade-out");
 				}, 150);
+			} else {
+				// Revert to segment-level explanation
+				const seg = state.segments.find((s) => s.id === state.currentSegment);
+				if (seg && seg.explanation) {
+					const explEl = document.getElementById("explanation-text");
+					explEl.classList.add("fade-out");
+					setTimeout(() => {
+						explEl.innerHTML = simpleMarkdown(seg.explanation);
+						explEl.classList.remove("fade-out");
+					}, 150);
+				}
 			}
 			break;
 		}

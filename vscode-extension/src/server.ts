@@ -163,11 +163,17 @@ export class ExplainerServer {
 				}
 			});
 		} else if (req.method === "POST" && url.pathname === "/api/save") {
-			this.readBody(req, res, (body) => this.handleSave(res, body));
+			this.readBody(req, res, (body) => this.handleSave(res, body).catch(() => {
+				if (!res.writableEnded) { res.writeHead(500); res.end(JSON.stringify({ error: "Internal error" })); }
+			}));
 		} else if (req.method === "GET" && url.pathname === "/api/walkthroughs") {
-			this.handleListWalkthroughs(res);
+			this.handleListWalkthroughs(res).catch(() => {
+				if (!res.writableEnded) { res.writeHead(500); res.end(JSON.stringify({ error: "Internal error" })); }
+			});
 		} else if (req.method === "POST" && url.pathname === "/api/load") {
-			this.readBody(req, res, (body) => this.handleLoad(res, body));
+			this.readBody(req, res, (body) => this.handleLoad(res, body).catch(() => {
+				if (!res.writableEnded) { res.writeHead(500); res.end(JSON.stringify({ error: "Internal error" })); }
+			}));
 		} else {
 			res.writeHead(404);
 			res.end(JSON.stringify({ error: "Not found" }));
@@ -236,14 +242,24 @@ export class ExplainerServer {
 			return;
 		}
 
+		let name: string | undefined;
 		try {
-			const { name } = body ? JSON.parse(body) : {} as { name?: string };
+			if (body.trim()) {
+				name = JSON.parse(body).name;
+			}
+		} catch {
+			res.writeHead(400);
+			res.end(JSON.stringify({ error: "Invalid JSON" }));
+			return;
+		}
+
+		try {
 			const filePath = await this.storage.save(state.title, state.segments, name);
 			res.writeHead(200);
 			res.end(JSON.stringify({ ok: true, filePath }));
 		} catch {
-			res.writeHead(400);
-			res.end(JSON.stringify({ error: "Invalid JSON" }));
+			res.writeHead(500);
+			res.end(JSON.stringify({ error: "Failed to save walkthrough" }));
 		}
 	}
 
@@ -254,9 +270,14 @@ export class ExplainerServer {
 			return;
 		}
 
-		const walkthroughs = await this.storage.list();
-		res.writeHead(200);
-		res.end(JSON.stringify({ walkthroughs }));
+		try {
+			const walkthroughs = await this.storage.list();
+			res.writeHead(200);
+			res.end(JSON.stringify({ walkthroughs }));
+		} catch {
+			res.writeHead(200);
+			res.end(JSON.stringify({ walkthroughs: [] }));
+		}
 	}
 
 	private async handleLoad(res: http.ServerResponse, body: string): Promise<void> {
@@ -266,28 +287,31 @@ export class ExplainerServer {
 			return;
 		}
 
+		let name: string;
 		try {
-			const { name } = JSON.parse(body) as { name: string };
-			if (!name || typeof name !== "string") {
-				res.writeHead(400);
-				res.end(JSON.stringify({ error: "Missing 'name' field" }));
-				return;
-			}
-
-			const data = await this.storage.load(name);
-			if (!data) {
-				res.writeHead(404);
-				res.end(JSON.stringify({ error: "Walkthrough not found" }));
-				return;
-			}
-
-			this.walkthrough.setPlan(data.title, data.segments);
-			res.writeHead(200);
-			res.end(JSON.stringify({ ok: true, title: data.title, segments: data.segments.length }));
+			name = JSON.parse(body).name;
 		} catch {
 			res.writeHead(400);
 			res.end(JSON.stringify({ error: "Invalid JSON" }));
+			return;
 		}
+
+		if (!name || typeof name !== "string") {
+			res.writeHead(400);
+			res.end(JSON.stringify({ error: "Missing 'name' field" }));
+			return;
+		}
+
+		const data = await this.storage.load(name);
+		if (!data) {
+			res.writeHead(404);
+			res.end(JSON.stringify({ error: "Walkthrough not found" }));
+			return;
+		}
+
+		this.walkthrough.setPlan(data.title, data.segments);
+		res.writeHead(200);
+		res.end(JSON.stringify({ ok: true, title: data.title, segments: data.segments.length }));
 	}
 
 	// ── WebSocket handler ──

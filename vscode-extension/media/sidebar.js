@@ -419,8 +419,12 @@ window.addEventListener("message", (event) => {
 			const btn = document.getElementById("btn-play-pause");
 			if (msg.loading) {
 				btn.classList.add("loading");
+				btn.setAttribute("aria-busy", "true");
+				btn.setAttribute("aria-disabled", "true");
 			} else {
 				btn.classList.remove("loading");
+				btn.removeAttribute("aria-busy");
+				btn.removeAttribute("aria-disabled");
 			}
 			break;
 		}
@@ -445,10 +449,14 @@ window.addEventListener("message", (event) => {
 			render();
 			break;
 
-		case "audio_chunk":
-			document.getElementById("btn-play-pause").classList.remove("loading");
+		case "audio_chunk": {
+			const playBtn = document.getElementById("btn-play-pause");
+			playBtn.classList.remove("loading");
+			playBtn.removeAttribute("aria-busy");
+			playBtn.removeAttribute("aria-disabled");
 			playAudioChunk(msg.data, msg.sampleRate);
 			break;
+		}
 
 		case "audio_end":
 			onAudioEnd();

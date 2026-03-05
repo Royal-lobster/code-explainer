@@ -146,6 +146,23 @@ export function activate(context: vscode.ExtensionContext): void {
 	let currentChunkAbort: (() => void) | undefined;
 	let highlightLoopGeneration = 0;
 
+	/** Pre-warm the TTS server then emit the current segment. */
+	function preWarmAndEmit(): void {
+		const seg = walkthrough.getCurrentSegment();
+		if (!seg) return;
+		const gen = ++highlightLoopGeneration;
+		sidebar.sendServerLoading(true);
+		ensureServer().then(() => {
+			sidebar.sendServerLoading(false);
+			if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
+				walkthrough.emit("segment", seg);
+			}
+		}).catch((err) => {
+			sidebar.sendServerLoading(false);
+			console.error("[code-explainer] ensureServer failed:", err);
+		});
+	}
+
 	async function playSegmentHighlights(
 		segment: Segment,
 		wt: Walkthrough,
@@ -292,17 +309,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			case "resume":
 				walkthrough.play();
 				// Pre-warm TTS server then re-trigger segment
-				const seg = walkthrough.getCurrentSegment();
-				if (seg) {
-					const gen = ++highlightLoopGeneration;
-					sidebar.sendServerLoading(true);
-					ensureServer().then(() => {
-						sidebar.sendServerLoading(false);
-						if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
-							walkthrough.emit("segment", seg);
-						}
-					});
-				}
+				preWarmAndEmit();
 				break;
 			case "stop":
 				sidebar.sendAudioStop();
@@ -319,18 +326,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				walkthrough.togglePlayPause();
 				// If resuming, pre-warm TTS server then re-trigger segment
 				if (walkthrough.getState().status === "playing") {
-					const seg = walkthrough.getCurrentSegment();
-					if (seg) {
-						const gen = ++highlightLoopGeneration;
-						sidebar.sendServerLoading(true);
-						ensureServer().then(() => {
-							sidebar.sendServerLoading(false);
-							// Guard: user may have paused during server startup
-							if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
-								walkthrough.emit("segment", seg);
-							}
-						});
-					}
+					preWarmAndEmit();
 				}
 				break;
 			case "next":

@@ -80,11 +80,9 @@ export function setWorkspaceRoot(root: string): void {
 function getProjectRootCandidates(): string[] {
 	const candidates: string[] = [];
 	if (workspaceRoot) candidates.push(workspaceRoot);
-	// The code-explainer repo (hardcoded fallback)
 	const home = process.env.HOME || "";
 	if (home) {
-		candidates.push(path.join(home, "Developer", "Personal", "code-explainer"));
-		// Skills directory (hardlinked copy)
+		// Skills directory (installed via claude skill)
 		candidates.push(path.join(home, ".claude", "skills", "explainer"));
 	}
 	return candidates;

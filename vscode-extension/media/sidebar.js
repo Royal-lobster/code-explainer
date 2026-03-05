@@ -296,32 +296,56 @@ function renderHighlightProgress() {
 	}
 }
 
+/** Track segment IDs used for the last full outline build */
+let outlineSegmentIds = [];
+
 function renderOutline(currentIdx) {
 	const list = document.getElementById("outline-list");
-	list.innerHTML = "";
 
-	for (let i = 0; i < state.segments.length; i++) {
-		const seg = state.segments[i];
-		const li = document.createElement("li");
+	// Check if segments changed (added/removed/reordered) — if so, full rebuild
+	const currentIds = state.segments.map((s) => s.id);
+	const needsRebuild =
+		currentIds.length !== outlineSegmentIds.length ||
+		currentIds.some((id, i) => id !== outlineSegmentIds[i]);
 
+	if (needsRebuild) {
+		list.innerHTML = "";
+		outlineSegmentIds = currentIds;
+
+		for (let i = 0; i < state.segments.length; i++) {
+			const seg = state.segments[i];
+			const li = document.createElement("li");
+
+			const marker = document.createElement("span");
+			marker.className = "marker";
+
+			const text = document.createElement("span");
+			text.textContent = `${i + 1}. ${seg.title}`;
+
+			li.appendChild(marker);
+			li.appendChild(text);
+			// Use pointerdown instead of click — fires immediately on press,
+			// preventing races with outline rebuilds or layout shifts.
+			li.addEventListener("pointerdown", (e) => {
+				e.preventDefault();
+				vscode.postMessage({ type: "goto_segment", segmentId: seg.id });
+			});
+			list.appendChild(li);
+		}
+	}
+
+	// Update classes and markers in-place (no DOM destruction)
+	const items = list.children;
+	for (let i = 0; i < items.length; i++) {
+		const li = items[i];
 		if (i === currentIdx) li.className = "current";
 		else if (i < currentIdx) li.className = "completed";
+		else li.className = "";
 
-		const marker = document.createElement("span");
-		marker.className = "marker";
+		const marker = li.querySelector(".marker");
 		if (i < currentIdx) marker.textContent = "\u2713";
 		else if (i === currentIdx) marker.textContent = "\u25B6";
 		else marker.textContent = "\u25CB";
-
-		const text = document.createElement("span");
-		text.textContent = `${i + 1}. ${seg.title}`;
-
-		li.appendChild(marker);
-		li.appendChild(text);
-		li.addEventListener("click", () => {
-			vscode.postMessage({ type: "goto_segment", segmentId: seg.id });
-		});
-		list.appendChild(li);
 	}
 }
 

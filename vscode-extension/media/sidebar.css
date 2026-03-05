@@ -253,7 +253,7 @@ body {
 	border-radius: 6px;
 	padding: 12px;
 	margin-bottom: 16px;
-	max-height: 200px;
+	height: 200px;
 	overflow-y: auto;
 }
 

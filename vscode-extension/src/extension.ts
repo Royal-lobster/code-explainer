@@ -152,6 +152,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	// TTS settings — updated by webview messages
 	let ttsVoice = "af_heart";
 	let ttsSpeed = 1;
+	let walkthroughSaved = false;
 
 	let currentChunkAbort: (() => void) | undefined;
 	let highlightLoopGeneration = 0;
@@ -430,6 +431,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (overwrite !== "Overwrite") return;
 			}
 			await storage.save(state.title, state.segments, name);
+			walkthroughSaved = true;
 			vscode.window.showInformationMessage(`Walkthrough saved to .walkthroughs/${name}.json`);
 		}),
 		vscode.commands.registerCommand('codeExplainer.loadWalkthrough', async () => {
@@ -465,6 +467,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	server.setMessageHandler((msg: AgentMessage) => {
 		switch (msg.type) {
 			case "set_plan":
+				walkthroughSaved = false;
 				walkthrough.setPlan(msg.title, msg.segments);
 				sidebar.reveal();
 				break;
@@ -619,6 +622,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (storage) {
 					const data = await storage.load(msg.name);
 					if (data) {
+						walkthroughSaved = true;
 						walkthrough.setPlan(data.title, data.segments);
 						sidebar.reveal();
 					}
@@ -633,6 +637,26 @@ export function activate(context: vscode.ExtensionContext): void {
 					});
 				}
 				break;
+			case "close_walkthrough": {
+				const wtState = walkthrough.getState();
+				if (wtState.status !== "idle" && wtState.status !== "stopped" && !walkthroughSaved) {
+					const choice = await vscode.window.showWarningMessage(
+						"This walkthrough hasn't been saved. Close anyway?",
+						{ modal: true, detail: "You can re-generate it by asking your coding agent to send the walkthrough again." },
+						"Save & Close",
+						"Close Without Saving",
+					);
+					if (!choice) break; // dismissed
+					if (choice === "Save & Close") {
+						await vscode.commands.executeCommand('codeExplainer.saveWalkthrough');
+					}
+				}
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+				fullAudioStop();
+				walkthrough.stop();
+				walkthroughSaved = false;
+				break;
+			}
 		}
 	});
 

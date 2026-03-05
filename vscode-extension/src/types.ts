@@ -209,6 +209,10 @@ export interface WebviewRequestSavedListMessage {
 	type: "request_saved_list";
 }
 
+export interface WebviewCloseWalkthroughMessage {
+	type: "close_walkthrough";
+}
+
 export type FromWebviewMessage =
 	| WebviewPlayPauseMessage
 	| WebviewNextMessage
@@ -224,4 +228,5 @@ export type FromWebviewMessage =
 	| WebviewPrevHighlightMessage
 	| WebviewSaveMessage
 	| WebviewLoadMessage
-	| WebviewRequestSavedListMessage;
+	| WebviewRequestSavedListMessage
+	| WebviewCloseWalkthroughMessage;

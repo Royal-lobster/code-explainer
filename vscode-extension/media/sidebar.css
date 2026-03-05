@@ -30,18 +30,43 @@ body {
 
 /* ── Idle view ── */
 
+.idle-header {
+	margin-bottom: 16px;
+}
+
+.idle-header-label {
+	font-size: 0.7em;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	opacity: 0.5;
+	text-transform: uppercase;
+}
+
+.idle-hero {
+	text-align: center;
+	padding: 24px 12px 20px;
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 8px;
+	margin-bottom: 16px;
+}
+
+.idle-icon {
+	margin-bottom: 10px;
+}
+
 .idle-text {
 	text-align: center;
-	margin-top: 40px;
 	opacity: 0.6;
-	font-size: 1.1em;
+	font-size: 0.95em;
+	font-weight: 500;
 }
 
 .idle-hint {
 	text-align: center;
-	margin-top: 8px;
+	margin-top: 6px;
 	opacity: 0.4;
-	font-size: 0.9em;
+	font-size: 0.8em;
 }
 
 .idle-hint code {
@@ -52,10 +77,42 @@ body {
 
 /* ── Header ── */
 
-.header h2 {
-	font-size: 1.2em;
+.header-label {
+	font-size: 0.7em;
 	font-weight: 600;
-	margin-bottom: 14px;
+	letter-spacing: 0.08em;
+	opacity: 0.5;
+	text-transform: uppercase;
+}
+
+.header-actions {
+	display: flex;
+	gap: 2px;
+}
+
+.icon-btn {
+	background: none;
+	border: none;
+	color: var(--vscode-foreground);
+	cursor: pointer;
+	opacity: 0.5;
+	padding: 3px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn:hover {
+	opacity: 1;
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+#active-view h2 {
+	font-size: 1.05em;
+	font-weight: 600;
+	margin-bottom: 8px;
 	color: var(--vscode-foreground);
 	letter-spacing: -0.01em;
 }
@@ -66,8 +123,8 @@ body {
 	background: var(--vscode-editor-background);
 	border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
-	padding: 10px 12px;
-	margin-bottom: 16px;
+	padding: 8px 10px;
+	margin-bottom: 10px;
 	position: relative;
 	overflow: hidden;
 }
@@ -120,8 +177,8 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 12px;
-	margin-bottom: 16px;
+	gap: 10px;
+	margin-bottom: 10px;
 }
 
 .controls button {
@@ -150,8 +207,8 @@ body {
 /* ── Play button (circular) ── */
 
 .controls .play-btn {
-	width: 48px;
-	height: 48px;
+	width: 42px;
+	height: 42px;
 	border-radius: 50%;
 	background: var(--vscode-button-background);
 	color: var(--vscode-button-foreground);
@@ -212,7 +269,7 @@ body {
 /* ── Audio controls ── */
 
 .audio-controls {
-	margin-bottom: 16px;
+	margin-bottom: 10px;
 }
 
 .control-row {
@@ -294,9 +351,9 @@ body {
 	background: var(--vscode-editor-background);
 	border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
-	padding: 12px;
-	margin-bottom: 16px;
-	height: 200px;
+	padding: 10px;
+	margin-bottom: 10px;
+	max-height: 150px;
 	overflow-y: auto;
 }
 
@@ -327,13 +384,13 @@ body {
 .agent-hint {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	margin-bottom: 16px;
-	padding: 10px 12px;
+	gap: 6px;
+	margin-bottom: 10px;
+	padding: 7px 10px;
 	background: var(--vscode-textBlockQuote-background);
 	border-left: 3px solid var(--vscode-textLink-foreground);
 	border-radius: 4px;
-	font-size: 0.85em;
+	font-size: 0.8em;
 	color: var(--vscode-descriptionForeground);
 }
 
@@ -453,37 +510,24 @@ body {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* ── Save button ── */
+/* ── Header bar ── */
 
 .header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-}
-
-.save-btn {
-	background: none;
-	border: none;
-	color: var(--vscode-foreground);
-	cursor: pointer;
-	opacity: 0.6;
-	padding: 4px;
-	border-radius: 4px;
-	transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-.save-btn:hover {
-	opacity: 1;
-	background: var(--vscode-toolbar-hoverBackground);
+	margin-bottom: 6px;
 }
 
 /* ── Saved walkthroughs list ── */
 
 .saved-list-title {
-	font-size: 0.9em;
+	font-size: 0.75em;
 	font-weight: 600;
-	margin: 24px 0 8px;
-	opacity: 0.8;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin-bottom: 6px;
+	opacity: 0.5;
 }
 
 #saved-list {
@@ -491,13 +535,31 @@ body {
 }
 
 .saved-item {
-	padding: 8px 12px;
+	padding: 9px 12px;
 	border-radius: 6px;
 	cursor: pointer;
 	font-size: 0.9em;
 	transition: background 0.15s ease;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.saved-item::before {
+	content: "";
+	display: block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--vscode-textLink-foreground);
+	flex-shrink: 0;
+	opacity: 0.6;
 }
 
 .saved-item:hover {
 	background: var(--vscode-list-hoverBackground);
+}
+
+.saved-item:hover::before {
+	opacity: 1;
 }

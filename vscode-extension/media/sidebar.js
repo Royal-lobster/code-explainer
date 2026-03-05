@@ -500,6 +500,10 @@ document.getElementById("btn-save").addEventListener("click", () => {
 	vscode.postMessage({ type: "save" });
 });
 
+document.getElementById("btn-close").addEventListener("click", () => {
+	vscode.postMessage({ type: "close_walkthrough" });
+});
+
 document.getElementById("volume-slider").addEventListener("input", (e) => {
 	volume = parseInt(e.target.value, 10) / 100;
 	updateVolume();

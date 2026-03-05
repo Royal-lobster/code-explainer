@@ -139,8 +139,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
 	<div id="idle-view">
-		<p class="idle-text">Waiting for walkthrough...</p>
-		<p class="idle-hint">Run <code>/explainer</code> in your coding agent to start</p>
+		<div class="idle-header">
+			<span class="idle-header-label">CODE EXPLAINER</span>
+		</div>
+		<div class="idle-hero">
+			<svg class="idle-icon" width="32" height="32" viewBox="0 0 16 16" fill="currentColor" opacity="0.4">
+				<path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11zM6.5 5v6l5-3-5-3z"/>
+			</svg>
+			<p class="idle-text">No walkthrough loaded</p>
+			<p class="idle-hint">Run <code>/explainer</code> in your coding agent to generate one</p>
+		</div>
 		<div id="saved-list-section" style="display:none;">
 			<h3 class="saved-list-title">Saved Walkthroughs</h3>
 			<ul id="saved-list"></ul>
@@ -150,13 +158,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 	<div id="active-view" style="display:none;">
 		<div class="sticky-top">
 			<div class="header">
-				<h2 id="walkthrough-title"></h2>
-				<button id="btn-save" class="save-btn" title="Save Walkthrough">
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-						<path d="M13.354 4.354l-3.708-3.708A.5.5 0 009.293.5H2.5A1.5 1.5 0 001 2v12a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0015 14V4.707a.5.5 0 00-.146-.353zM12 14H4V9h8v5zm1-7H3V2h6.293L13 5.707V7z"/>
-					</svg>
-				</button>
+				<span class="header-label">CODE EXPLAINER</span>
+				<div class="header-actions">
+					<button id="btn-save" class="icon-btn" title="Save Walkthrough">
+						<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+							<path d="M13.354 4.354l-3.708-3.708A.5.5 0 009.293.5H2.5A1.5 1.5 0 001 2v12a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0015 14V4.707a.5.5 0 00-.146-.353zM12 14H4V9h8v5zm1-7H3V2h6.293L13 5.707V7z"/>
+						</svg>
+					</button>
+					<button id="btn-close" class="icon-btn" title="Close Walkthrough">
+						<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+							<path d="M8 8.707l3.646 3.647.708-.708L8.707 8l3.647-3.646-.708-.708L8 7.293 4.354 3.646l-.708.708L7.293 8l-3.647 3.646.708.708L8 8.707z"/>
+						</svg>
+					</button>
+				</div>
 			</div>
+			<h2 id="walkthrough-title"></h2>
 
 			<div class="now-playing">
 				<div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>

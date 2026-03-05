@@ -17,11 +17,13 @@
 ## 🚀 Features
 
 - 🪟 **VS Code Sidebar** — Dedicated sidebar panel with walkthrough controls, segment navigation, and live explanation display
-- 🎯 **Code Highlighting** — Automatically opens files, scrolls to code, and highlights line ranges with a gold background decoration
+- 🎯 **Code Highlighting** — Automatically opens files, scrolls to code, and highlights 1–8 line ranges with per-highlight explanations
 - 🔊 **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon via mlx-audio
 - 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - 🧠 **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 - 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
+- 💾 **Save & Replay** — Save walkthroughs to `.walkthrough.json` files for later replay
+- ⌨️ **Keyboard Shortcuts** — Full keybinding support for hands-free navigation
 
 ## 📦 Requirements
 
@@ -141,13 +143,30 @@ How does the WebSocket gateway handle events?
 The VS Code sidebar provides buttons for all walkthrough controls:
 
 - ▶️ **Play / Pause** — Toggle walkthrough playback
-- ⏭️ **Next / Previous** — Navigate between segments
+- ⏭️ **Next / Previous** — Navigate between highlights within a segment
+- ⏩ **Next / Previous Segment** — Jump between segments
 - ⏩ **Speed** — Adjust TTS playback speed
 - 🔈 **Volume** — Adjust TTS volume
 - 🗣️ **Voice** — Select TTS voice
 - 🔇 **Mute / Unmute** — Toggle voice narration
+- 🔄 **Restart** — Restart walkthrough from the beginning
 
-### ⌨️ Text Controls
+### ⌨️ Keyboard Shortcuts
+
+All shortcuts are active when a walkthrough is running:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+Space` | Toggle play / pause |
+| `Ctrl+Shift+]` | Next sub-segment |
+| `Ctrl+Shift+[` | Previous sub-segment |
+| `Ctrl+Shift+Alt+]` | Next segment |
+| `Ctrl+Shift+Alt+[` | Previous segment |
+| `Ctrl+Shift+\` | Stop walkthrough |
+| `Ctrl+Shift+=` | Speed up TTS |
+| `Ctrl+Shift+-` | Speed down TTS |
+
+### 💬 Text Controls
 
 You can also type commands in your agent's chat:
 
@@ -200,12 +219,13 @@ Coding Agent ──HTTP──▶ Extension Server ──Events──▶ Sidebar 
 
 | Component | Description |
 |-----------|-------------|
-| 🌐 **Extension Server** (`server.ts`) | HTTP + WebSocket server with bearer token auth. Endpoints for plan delivery, state queries, and long-polling user actions. |
-| 🪟 **Sidebar** (`sidebar.ts`) | Webview panel showing the walkthrough — segment list, explanations, and playback controls. |
-| 🔄 **Walkthrough** (`walkthrough.ts`) | State machine managing segment navigation and playback status. |
-| 🎯 **Highlight** (`highlight.ts`) | Opens files, scrolls to ranges, and applies gold background decorations. Falls back to file-watcher mode. |
+| 🌐 **Extension Server** (`server.ts`) | HTTP + WebSocket server with bearer token auth. Endpoints for plan delivery, state queries, save/load, and long-polling user actions. |
+| 🪟 **Sidebar** (`sidebar.ts`) | Webview panel showing the walkthrough — segment list, per-highlight explanations, and playback controls. |
+| 🔄 **Walkthrough** (`walkthrough.ts`) | State machine managing segment and sub-highlight navigation and playback status. |
+| 🎯 **Highlight** (`highlight.ts`) | Opens files, scrolls to ranges, and applies gold background decorations. |
 | 🔊 **TTS Bridge** (`tts-bridge.ts`) | Streams audio from the Python TTS server to the sidebar webview via WebSocket. |
 | 🐍 **TTS Server** (`tts_server.py`) | Persistent Python daemon that loads Kokoro once and streams audio over a Unix socket. |
+| 💾 **Storage** (`storage.ts`) | Save and load walkthroughs as `.walkthrough.json` files for replay and sharing. |
 | 📡 **Helper Script** (`explainer.sh`) | CLI wrapper around the HTTP API — used by the coding agent to send plans and poll for user actions. |
 
 ## 📁 Project Structure
@@ -216,16 +236,19 @@ code-explainer/
 ├── 🔧 setup.sh                      # One-command setup script
 ├── 📂 scripts/
 │   ├── 📡 explainer.sh              # HTTP API helper for the coding agent
-│   └── 🐍 tts_server.py             # Persistent TTS server (Kokoro-82M)
+│   ├── 🐍 tts_server.py             # Persistent TTS server (Kokoro-82M)
+│   ├── 🎙️ podcast.py                # Podcast mode audio generator
+│   └── 🔄 reinstall-extension.sh    # Quick extension rebuild
 ├── 📂 docs/
 │   ├── 📖 setup.md                  # Setup reference
+│   ├── 🗑️ uninstall.md              # Uninstall guide
 │   ├── 🎯 assess.md                 # Preference gathering
 │   ├── 🔍 scan.md                   # Codebase scanning via sub-agent
 │   ├── 📋 plan.md                   # Walkthrough plan generation
-│   ├── 🎥 walkthrough.md             # Walkthrough mode with sidebar + TTS
-│   ├── 📝 read.md                    # Read mode (text in terminal)
-│   ├── 🎙️ podcast.md                # Podcast mode (single audio file)
-│   └── 🗣️ tts.md                    # TTS reference (voices, speeds)
+│   ├── 🎥 walkthrough.md            # Walkthrough mode with sidebar + TTS
+│   ├── 📝 read.md                   # Read mode (text in terminal)
+│   ├── 🎙️ podcast.md               # Podcast mode (single audio file)
+│   └── 🗣️ tts.md                   # TTS reference (voices, speeds)
 └── 📂 vscode-extension/
     ├── 📦 package.json
     ├── ⚙️ tsconfig.json
@@ -236,9 +259,12 @@ code-explainer/
     │   ├── 🔄 walkthrough.ts        # Walkthrough state machine
     │   ├── 🎯 highlight.ts          # Code highlighting
     │   ├── 🔊 tts-bridge.ts         # TTS audio streaming
+    │   ├── 💾 storage.ts            # Walkthrough persistence
     │   └── 📝 types.ts              # Message protocol types
     └── 📂 media/
-        └── 🎨 icon.svg
+        ├── 🎨 icon.svg
+        ├── 🖼️ icon.png
+        └── 📜 sidebar.js            # Sidebar webview script
 ```
 
 ## 📄 License

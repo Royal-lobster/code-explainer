@@ -143,21 +143,17 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 			</div>
 
 			<div class="controls">
-				<button id="btn-prev" title="Previous segment">
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h2v10H3V3zm10 0L7 8l6 5V3z"/></svg>
-				</button>
-				<button id="btn-prev-highlight" class="highlight-btn" title="Previous sub-segment">
-					<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M10 2L4 8l6 6V2z"/></svg>
+				<button id="btn-prev" title="Hold Shift to skip entire segment">
+					<svg class="icon-highlight" width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M10 2L4 8l6 6V2z"/></svg>
+					<svg class="icon-segment" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M3 3h2v10H3V3zm10 0L7 8l6 5V3z"/></svg>
 				</button>
 				<button id="btn-play-pause" class="play-btn" title="Play/Pause">
 					<svg class="icon-play" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
 					<svg class="icon-pause" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M3 2h4v12H3V2zm6 0h4v12H9V2z"/></svg>
 				</button>
-				<button id="btn-next-highlight" class="highlight-btn" title="Next sub-segment">
-					<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2l6 6-6 6V2z"/></svg>
-				</button>
-				<button id="btn-next" title="Next segment">
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 3h2v10h-2V3zM3 3l6 5-6 5V3z"/></svg>
+				<button id="btn-next" title="Hold Shift to skip entire segment">
+					<svg class="icon-highlight" width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2l6 6-6 6V2z"/></svg>
+					<svg class="icon-segment" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M11 3h2v10h-2V3zM3 3l6 5-6 5V3z"/></svg>
 				</button>
 			</div>
 

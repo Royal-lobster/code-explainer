@@ -6,6 +6,7 @@ import * as fs from "fs";
 import { WebSocketServer, WebSocket } from "ws";
 import type { Walkthrough } from "./walkthrough";
 import type { AgentMessage, ExtensionMessage, UserActionMessage } from "./types";
+import type { WalkthroughStorage } from "./storage";
 
 const PORT_FILE = path.join(os.homedir(), ".claude-explainer-port");
 const TOKEN_FILE = path.join(os.homedir(), ".claude-explainer-token");
@@ -31,6 +32,7 @@ export class ExplainerServer {
 	private actionWaiters: Array<(action: UserActionMessage) => void> = [];
 	private port = 0;
 	private authToken: string;
+	private storage: WalkthroughStorage | undefined;
 
 	constructor(walkthrough: Walkthrough) {
 		this.walkthrough = walkthrough;
@@ -41,6 +43,10 @@ export class ExplainerServer {
 			verifyClient: (info: { req: http.IncomingMessage }) => this.checkAuth(info.req),
 		});
 		this.wss.on("connection", this.handleWs.bind(this));
+	}
+
+	setStorage(storage: WalkthroughStorage): void {
+		this.storage = storage;
 	}
 
 	async start(): Promise<number> {
@@ -156,6 +162,12 @@ export class ExplainerServer {
 					res.end(JSON.stringify({ error: "Invalid JSON" }));
 				}
 			});
+		} else if (req.method === "POST" && url.pathname === "/api/save") {
+			this.readBody(req, res, (body) => this.handleSave(res, body));
+		} else if (req.method === "GET" && url.pathname === "/api/walkthroughs") {
+			this.handleListWalkthroughs(res);
+		} else if (req.method === "POST" && url.pathname === "/api/load") {
+			this.readBody(req, res, (body) => this.handleLoad(res, body));
 		} else {
 			res.writeHead(404);
 			res.end(JSON.stringify({ error: "Not found" }));
@@ -206,6 +218,76 @@ export class ExplainerServer {
 			const idx = this.actionWaiters.indexOf(waiter);
 			if (idx !== -1) this.actionWaiters.splice(idx, 1);
 		});
+	}
+
+	// ── Save / Load / List handlers ──
+
+	private async handleSave(res: http.ServerResponse, body: string): Promise<void> {
+		if (!this.storage) {
+			res.writeHead(500);
+			res.end(JSON.stringify({ error: "Storage not available" }));
+			return;
+		}
+
+		const state = this.walkthrough.getState();
+		if (!state.title || state.segments.length === 0) {
+			res.writeHead(400);
+			res.end(JSON.stringify({ error: "No active walkthrough" }));
+			return;
+		}
+
+		try {
+			const { name } = body ? JSON.parse(body) : {} as { name?: string };
+			const filePath = await this.storage.save(state.title, state.segments, name);
+			res.writeHead(200);
+			res.end(JSON.stringify({ ok: true, filePath }));
+		} catch {
+			res.writeHead(400);
+			res.end(JSON.stringify({ error: "Invalid JSON" }));
+		}
+	}
+
+	private async handleListWalkthroughs(res: http.ServerResponse): Promise<void> {
+		if (!this.storage) {
+			res.writeHead(200);
+			res.end(JSON.stringify({ walkthroughs: [] }));
+			return;
+		}
+
+		const walkthroughs = await this.storage.list();
+		res.writeHead(200);
+		res.end(JSON.stringify({ walkthroughs }));
+	}
+
+	private async handleLoad(res: http.ServerResponse, body: string): Promise<void> {
+		if (!this.storage) {
+			res.writeHead(500);
+			res.end(JSON.stringify({ error: "Storage not available" }));
+			return;
+		}
+
+		try {
+			const { name } = JSON.parse(body) as { name: string };
+			if (!name || typeof name !== "string") {
+				res.writeHead(400);
+				res.end(JSON.stringify({ error: "Missing 'name' field" }));
+				return;
+			}
+
+			const data = await this.storage.load(name);
+			if (!data) {
+				res.writeHead(404);
+				res.end(JSON.stringify({ error: "Walkthrough not found" }));
+				return;
+			}
+
+			this.walkthrough.setPlan(data.title, data.segments);
+			res.writeHead(200);
+			res.end(JSON.stringify({ ok: true, title: data.title, segments: data.segments.length }));
+		} catch {
+			res.writeHead(400);
+			res.end(JSON.stringify({ error: "Invalid JSON" }));
+		}
 	}
 
 	// ── WebSocket handler ──

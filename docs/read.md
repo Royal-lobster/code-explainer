@@ -1,17 +1,10 @@
-# Step 5: Interactive Walkthrough
+# Step 5: Read Mode
 
-**If Autoplay was chosen, use `docs/autoplay.md` instead.**
-
-## 5-pre. Send plan to sidebar (if not already sent in step 3)
-
-If the sidebar is active and you haven't already sent `set_plan` in step 3, send it now.
-The sidebar needs the full plan before `goto` messages will work. See `docs/plan.md` step 3a for the `set_plan` JSON schema and send command.
+Text-only walkthrough in the terminal. No sidebar or TTS required.
 
 For each segment:
 
-## 5a. Highlight in VS Code
-
-**Highlight BEFORE explaining.**
+## 5a. Highlight in VS Code (if available)
 
 Sidebar active (from step 0):
 ```bash
@@ -51,18 +44,10 @@ Read(file_path, offset=startLine, limit=endLine-startLine+1)
 
 **Formatting:** Reference lines ("On line 42, `matchOrders()`..."), use `file:line` for cross-refs, backticks for names.
 
-## 5c-tts. TTS (if enabled)
-
-Sidebar active: TTS is automatic — just include `ttsText` in segments. No scripts needed.
-
-Sidebar not available: TTS not supported in fallback mode.
-
-For `ttsText` formatting rules, see `docs/tts.md`. Key rule: plain text only, no markdown/line refs/paths, 2-4 sentences, conversational.
-
 ## 5d. Wait for User
 
 ```
 Segment {current}/{total} -- say "next" to continue, or ask any questions.
 ```
 
-Handle: "next"→proceed, question→answer then ask if ready, "skip"→next, "skip to {N}"→jump, "stop"→wrap-up, "mute"/"unmute"→toggle TTS.
+Handle: "next" -> proceed, question -> answer then ask if ready, "skip" -> next, "skip to {N}" -> jump, "stop" -> wrap-up.

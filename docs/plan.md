@@ -21,8 +21,11 @@ Build a `set_plan` JSON message matching the sidebar API schema exactly:
       "title": "HTTP endpoint, request validation",
       "explanation": "",
       "highlights": [
-        { "start": 10, "end": 20, "ttsText": "Plain text narration for this sub-range.", "explanation": "Optional markdown explanation for this highlight." },
-        { "start": 25, "end": 40, "ttsText": "Plain text narration for this sub-range." }
+        { "start": 10, "end": 12, "ttsText": "First, the route decorator registers this as a POST endpoint at slash orders.", "explanation": "Route registration" },
+        { "start": 13, "end": 15, "ttsText": "The request body is validated against the CreateOrderDto schema.", "explanation": "Request validation" },
+        { "start": 17, "end": 19, "ttsText": "We extract the user ID from the authenticated request context.", "explanation": "Auth context extraction" },
+        { "start": 21, "end": 25, "ttsText": "The order is created by calling the order service with the validated payload.", "explanation": "Service delegation" },
+        { "start": 27, "end": 30, "ttsText": "Finally, the response is wrapped in a standard API envelope with the new order ID.", "explanation": "Response formatting" }
       ]
     }
   ]

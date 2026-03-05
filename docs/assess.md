@@ -16,13 +16,8 @@ Default: **Overview**.
 
 | Mode | Description |
 |------|-------------|
-| **Autoplay** (recommended) | Auto-advancing highlights + TTS narration. Hands-free. |
-| **Interactive + TTS** | Step-by-step with voice. Waits for "next" between segments. |
-| **Interactive (text only)** | Step-by-step, text only. Waits for "next". |
+| **Walkthrough** (recommended) | Auto-advancing highlights + TTS narration via sidebar. Hands-free. |
+| **Read** | Text explanations in terminal. No sidebar or TTS required. |
 | **Podcast** | Single audio file of entire walkthrough. |
 
-Default: **Autoplay**.
-
-## Question 3: Narration speed
-
-Options: **1x** (default), **1.25x**, **1.5x**, **2x**. See `docs/tts.md` for details.
+Default: **Walkthrough**.

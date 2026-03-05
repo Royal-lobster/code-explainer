@@ -17,7 +17,7 @@ Complete these steps in order:
 
 1. **Scan codebase** — Read `docs/scan.md`. Dispatch haiku sub-agent with depth level from step 0.
 2. **Build + present plan** — Read `docs/plan.md`. Parse scan results into ordered segments, present to user, wait for approval.
-3. **Execute walkthrough** — Read the doc for chosen mode: `docs/interactive.md`, `docs/autoplay.md`, or `docs/podcast.md`. All reference `docs/tts.md`.
+3. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
 4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
 **First-time setup?** Read `docs/setup.md`.
@@ -36,6 +36,6 @@ Complete these steps in order:
 | Ignoring complexity tags | `[core]` = thorough, `[wiring]` = breeze through, `[supporting]` = brief |
 | Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
-| Sub-highlights too broad | 5-15 lines each, target 30-60% coverage of segment, not a partition of the full range |
+| Sub-highlights too broad | One concept per highlight, 1-8 lines each. Split multi-operation blocks. For constructors with N args, use N highlights. Target 4-10 highlights per segment |
 | Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` step 3a for exact schema |
 | Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send `set_plan` via `explainer.sh plan` before any `goto` messages |

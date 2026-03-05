@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a podcast WAV file from a walkthrough plan.
 
-Takes a JSON plan file (same format as autoplay) and synthesizes all
+Takes a JSON plan file (same format as walkthrough mode) and synthesizes all
 segment narrations into a single WAV file using the TTS server.
 
 Usage:

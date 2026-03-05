@@ -4,7 +4,7 @@ Synthesize the entire walkthrough into a single WAV file. No sidebar or highligh
 
 ## Steps
 
-1. **Build plan JSON** — same segment format as autoplay, but only `ttsText` matters. Write narration that flows as a continuous podcast.
+1. **Build plan JSON** — same segment format as walkthrough mode, but only `ttsText` matters. Write narration that flows as a continuous podcast.
 
 ```json
 {
@@ -48,7 +48,7 @@ Podcast narration should flow as a **continuous audio tour**:
 - **Intro segment** (id: 0) — set context: what feature, why it matters, what we'll cover
 - **Transitions** — "Now that we've seen how requests arrive, let's follow the data into the service layer"
 - **Outro segment** — recap key takeaways
-- **3-6 sentences per segment** — longer than interactive since user can't see code
+- **3-6 sentences per segment** — longer than walkthrough since user can't see code
 - **Reference code conceptually** — "the validate function" not "line 42" or file paths
 - **Describe code shape** — "a small utility, about ten lines, that takes a token and returns the decoded payload"
 

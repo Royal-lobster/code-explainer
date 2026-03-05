@@ -1,4 +1,4 @@
-# Step 5: Autoplay Mode
+# Step 5: Walkthrough Mode
 
 Sidebar-driven playback. Send the walkthrough plan to the sidebar extension which handles highlighting, TTS streaming, and auto-advancing.
 
@@ -60,12 +60,18 @@ Returns e.g. `{"type": "user_action", "action": "next", "segmentId": 3}`. Handle
 
 ### Sub-highlights
 
-Required for segments > 30 lines. Optional for smaller. Skip for < 10 lines.
+Required for all segments > 10 lines. Optional for smaller.
 
-- 2-5 sub-ranges per segment, each **5-15 lines** at logical boundaries
+- **One concept per highlight** — each highlight explains exactly one thing:
+  - One function call, one assignment, one conditional, one return
+  - For multi-arg constructors/calls: highlight each argument separately
+  - For sequential operations (e.g., 3 DB updates): one highlight per operation
+- **1-8 lines per highlight** (single statements can be 1-2 lines)
+- **4-10 highlights per segment** (more granular = better)
+- Minimum 5 highlights for segments > 40 lines
 - Each has own `ttsText` (1-2 sentences)
-- **Not a partition** — zoom into key code, target 30-60% line coverage
-- Minimum 3 highlights for segments > 40 lines
+- **Not a partition** — OK to skip boilerplate lines between highlights
+- Target **50-80% line coverage** of the segment
 
 ## Narration style
 

@@ -19,7 +19,7 @@
 - 🪟 **VS Code Sidebar** — Dedicated sidebar panel with walkthrough controls, segment navigation, and live explanation display
 - 🎯 **Code Highlighting** — Automatically opens files, scrolls to code, and highlights line ranges with a gold background decoration
 - 🔊 **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon via mlx-audio
-- 🎬 **Three Modes** — Autoplay (hands-free), Interactive + TTS, or Interactive (text only)
+- 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - 🧠 **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 - 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
 
@@ -124,7 +124,7 @@ How does the WebSocket gateway handle events?
    ├── 🎯 Highlights lines in your editor
    ├── 📖 Reads the code and explains the segment
    ├── 🔊 Streams TTS audio to the sidebar (if enabled)
-   └── ⏸️  Waits for your input (or auto-advances in autoplay)
+   └── ⏸️  Waits for your input (or auto-advances in walkthrough mode)
 6. 📝 Summarizes key takeaways
 ```
 
@@ -132,15 +132,15 @@ How does the WebSocket gateway handle events?
 
 | Mode | Description |
 |------|-------------|
-| 🎥 **Autoplay** | Highlights move through code automatically while voice narrates in sync. Hands-free — just watch and listen. |
-| 🎙️ **Interactive + TTS** | Step-by-step with voice. Highlights code, explains in text + voice, waits for "next". |
-| 📝 **Interactive** | Step-by-step, text only. Highlights code, explains in text, waits for "next". |
+| 🎥 **Walkthrough** | Highlights move through code automatically while voice narrates in sync. Hands-free — just watch and listen. |
+| 📝 **Read** | Text explanations in terminal. Highlights code, explains in text, waits for "next". No sidebar or TTS required. |
+| 🎙️ **Podcast** | Generates a single audio file of the entire walkthrough. Listen anywhere. |
 
 ### 🪟 Sidebar Controls
 
 The VS Code sidebar provides buttons for all walkthrough controls:
 
-- ▶️ **Play / Pause** — Toggle autoplay
+- ▶️ **Play / Pause** — Toggle walkthrough playback
 - ⏭️ **Next / Previous** — Navigate between segments
 - ⏩ **Speed** — Adjust TTS playback speed
 - 🔈 **Volume** — Adjust TTS volume
@@ -156,7 +156,7 @@ You can also type commands in your agent's chat:
 | `next` | ⏭️ Move to next segment |
 | `skip` | ⏩ Skip current segment |
 | `skip to 4` | 🎯 Jump to segment 4 |
-| `pause` | ⏸️ Stop autoplay |
+| `pause` | ⏸️ Pause walkthrough |
 | `mute` / `unmute` | 🔇 Toggle voice narration |
 | `stop` | ⏹️ End walkthrough |
 
@@ -222,8 +222,8 @@ code-explainer/
 │   ├── 🎯 assess.md                 # Preference gathering
 │   ├── 🔍 scan.md                   # Codebase scanning via sub-agent
 │   ├── 📋 plan.md                   # Walkthrough plan generation
-│   ├── 🎙️ interactive.md            # Interactive mode execution
-│   ├── 🎥 autoplay.md               # Autoplay mode with sidebar streaming
+│   ├── 🎥 walkthrough.md             # Walkthrough mode with sidebar + TTS
+│   ├── 📝 read.md                    # Read mode (text in terminal)
 │   ├── 🎙️ podcast.md                # Podcast mode (single audio file)
 │   └── 🗣️ tts.md                    # TTS reference (voices, speeds)
 └── 📂 vscode-extension/

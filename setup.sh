@@ -287,8 +287,9 @@ else
 fi
 echo ""
 echo -e "  ${BOLD}Modes:${NC}"
-echo -e "  • ${GREEN}Autoplay${NC}     — highlights + voice narration play automatically"
-echo -e "  • ${GREEN}Interactive${NC}  — step-by-step with optional TTS"
+echo -e "  • ${GREEN}Walkthrough${NC}  — highlights + voice narration play automatically"
+echo -e "  • ${GREEN}Read${NC}         — text explanations in terminal"
+echo -e "  • ${GREEN}Podcast${NC}      — single audio file of entire walkthrough"
 echo ""
 echo -e "  ${BOLD}Voice config:${NC}"
 echo -e "  • Change voice: ${BLUE}export TTS_VOICE=am_adam${NC} (male)"

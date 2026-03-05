@@ -9,7 +9,7 @@ A VS Code extension that works with your coding agent to scan your codebase, bui
 - **Sidebar Panel** — Dedicated sidebar with walkthrough controls, segment navigation, and live explanation display
 - **Code Highlighting** — Automatically opens files, scrolls to code, and highlights line ranges
 - **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M, running locally on Apple Silicon via mlx-audio
-- **Three Modes** — Autoplay (hands-free), Interactive + TTS, or Interactive (text only)
+- **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 
 ## Usage
@@ -43,7 +43,7 @@ Or use the skill command:
 
 | Control | Action |
 |---------|--------|
-| **Play / Pause** | Toggle autoplay |
+| **Play / Pause** | Toggle walkthrough playback |
 | **Next / Previous** | Navigate between segments |
 | **Speed** | Adjust TTS playback speed |
 | **Volume** | Adjust TTS volume |
@@ -59,7 +59,7 @@ You can also type commands in your agent's chat:
 | `next` | Move to next segment |
 | `skip` | Skip current segment |
 | `skip to 4` | Jump to segment 4 |
-| `pause` | Stop autoplay |
+| `pause` | Pause walkthrough |
 | `mute` / `unmute` | Toggle voice narration |
 | `stop` | End walkthrough |
 

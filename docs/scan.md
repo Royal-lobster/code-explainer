@@ -23,7 +23,7 @@ Return a structured result:
 - **Call chain**: what calls what (A -> B -> C)
 - **Walkthrough plan**: ordered list of segments, each as:
   {file_absolute_path}:{start}-{end} -- {title} [{complexity}]
-    Sub-highlights (2-5 per segment):
+    Sub-highlights (4-10 per segment, one concept each):
       - {start}-{end} -- {ttsText: 1-2 sentence plain-text narration} [explanation: optional markdown explanation]
 
   IMPORTANT — field names must match the sidebar API exactly:
@@ -36,8 +36,10 @@ Return a structured result:
   - `[wiring]` — boilerplate, config, DI. Breeze through.
   - `[supporting]` — helpers, utilities, types. Explain briefly.
 
-  Sub-highlights: focused 5-15 line blocks at logical boundaries
-  (imports, function signatures, conditionals, return values, setup vs logic).
+  Sub-highlights: one concept per highlight, 1-8 lines each.
+  Split multi-operation blocks into individual highlights.
+  For constructors/function calls with multiple args, highlight each arg separately.
+  For sequential operations (e.g., 3 DB updates in a row), one highlight per update.
 
 Depth level: {overview|detailed|focused}
 Segment sizing:

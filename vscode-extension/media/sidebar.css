@@ -389,7 +389,17 @@ body {
 	list-style: none;
 }
 
-.outline li {
+.outline .marker {
+	width: 16px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.outline-segment {
+	list-style: none;
+}
+
+.outline-segment-header {
 	padding: 5px 8px;
 	border-radius: 4px;
 	cursor: pointer;
@@ -401,24 +411,69 @@ body {
 	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.outline li:hover {
+.outline-segment-header:hover {
 	background: var(--vscode-list-hoverBackground);
 }
 
-.outline li.current {
+.outline-segment-header.current {
 	background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 40%, transparent);
 	color: var(--vscode-list-activeSelectionForeground);
 	border-left-color: var(--vscode-focusBorder);
 }
 
-.outline li.completed {
+.outline-segment-header.completed {
 	opacity: 0.6;
 }
 
-.outline .marker {
-	width: 16px;
+.expand-icon {
+	width: 12px;
+	font-size: 0.75em;
+	flex-shrink: 0;
+	transition: transform 0.15s ease;
+}
+
+.outline-highlights {
+	list-style: none;
+	padding-left: 28px;
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.2s ease;
+}
+
+.outline-highlights.expanded {
+	max-height: 500px;
+}
+
+.outline-highlight {
+	padding: 3px 8px;
+	font-size: 0.8em;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	opacity: 0.7;
+	border-radius: 3px;
+}
+
+.outline-highlight:hover {
+	background: var(--vscode-list-hoverBackground);
+	opacity: 1;
+}
+
+.outline-highlight.current {
+	opacity: 1;
+	color: var(--vscode-list-activeSelectionForeground);
+}
+
+.outline-highlight.completed {
+	opacity: 0.5;
+}
+
+.hl-marker {
+	width: 12px;
 	text-align: center;
 	flex-shrink: 0;
+	font-size: 0.8em;
 }
 
 /* ── Done view ── */

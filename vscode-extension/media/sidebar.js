@@ -317,10 +317,8 @@ let outlineSegmentIds = [];
 function renderOutline(currentIdx) {
 	const list = document.getElementById("outline-list");
 
-	// Check if segments changed (added/removed/reordered) — if so, full rebuild
-	const currentIds = state.segments.map((s) => s.id);
-	const needsRebuild =
-		currentIds.length !== outlineSegmentIds.length ||
+	const currentIds = state.segments.map(s => s.id);
+	const needsRebuild = currentIds.length !== outlineSegmentIds.length ||
 		currentIds.some((id, i) => id !== outlineSegmentIds[i]);
 
 	if (needsRebuild) {
@@ -330,37 +328,132 @@ function renderOutline(currentIdx) {
 		for (let i = 0; i < state.segments.length; i++) {
 			const seg = state.segments[i];
 			const li = document.createElement("li");
+			li.className = "outline-segment";
+
+			// Segment header (clickable)
+			const header = document.createElement("div");
+			header.className = "outline-segment-header";
 
 			const marker = document.createElement("span");
 			marker.className = "marker";
 
+			const expandIcon = document.createElement("span");
+			expandIcon.className = "expand-icon";
+			expandIcon.textContent = "\u25B8";
+
 			const text = document.createElement("span");
+			text.className = "segment-label";
 			text.textContent = `${i + 1}. ${seg.title}`;
 
-			li.appendChild(marker);
-			li.appendChild(text);
-			// Use pointerdown instead of click — fires immediately on press,
-			// preventing races with outline rebuilds or layout shifts.
-			li.addEventListener("pointerdown", (e) => {
+			header.appendChild(marker);
+			header.appendChild(expandIcon);
+			header.appendChild(text);
+
+			// Clicking header navigates to segment
+			header.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				vscode.postMessage({ type: "goto_segment", segmentId: seg.id });
 			});
+
+			li.appendChild(header);
+
+			// Nested highlights
+			if (seg.highlights && seg.highlights.length > 1) {
+				const subList = document.createElement("ul");
+				subList.className = "outline-highlights";
+
+				for (let j = 0; j < seg.highlights.length; j++) {
+					const hl = seg.highlights[j];
+					const subLi = document.createElement("li");
+					subLi.className = "outline-highlight";
+
+					const hlMarker = document.createElement("span");
+					hlMarker.className = "hl-marker";
+
+					const hlText = document.createElement("span");
+					// Use explanation if available, otherwise line range
+					hlText.textContent = hl.explanation
+						? hl.explanation.substring(0, 40) + (hl.explanation.length > 40 ? "..." : "")
+						: `Lines ${hl.start}-${hl.end}`;
+
+					subLi.appendChild(hlMarker);
+					subLi.appendChild(hlText);
+
+					// Click to jump to specific highlight
+					const segId = seg.id;
+					const hlIdx = j;
+					subLi.addEventListener("pointerdown", (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						// Navigate to segment first, then to highlight
+						vscode.postMessage({ type: "goto_segment", segmentId: segId });
+						// TODO: need a way to jump to specific highlight within segment
+						// For now, just navigate to the segment
+					});
+
+					subList.appendChild(subLi);
+				}
+
+				li.appendChild(subList);
+			}
+
 			list.appendChild(li);
 		}
 	}
 
-	// Update classes and markers in-place (no DOM destruction)
+	// Update state classes
 	const items = list.children;
 	for (let i = 0; i < items.length; i++) {
 		const li = items[i];
-		if (i === currentIdx) li.className = "current";
-		else if (i < currentIdx) li.className = "completed";
-		else li.className = "";
+		const header = li.querySelector(".outline-segment-header");
+		const expandIcon = li.querySelector(".expand-icon");
+		const subList = li.querySelector(".outline-highlights");
+
+		// Update markers and classes
+		if (i === currentIdx) {
+			header.className = "outline-segment-header current";
+		} else if (i < currentIdx) {
+			header.className = "outline-segment-header completed";
+		} else {
+			header.className = "outline-segment-header";
+		}
 
 		const marker = li.querySelector(".marker");
 		if (i < currentIdx) marker.textContent = "\u2713";
 		else if (i === currentIdx) marker.textContent = "\u25B6";
 		else marker.textContent = "\u25CB";
+
+		// Expand/collapse
+		if (subList) {
+			if (i === currentIdx) {
+				subList.classList.add("expanded");
+				if (expandIcon) expandIcon.textContent = "\u25BE";
+			} else {
+				subList.classList.remove("expanded");
+				if (expandIcon) expandIcon.textContent = "\u25B8";
+			}
+		}
+
+		// Update highlight markers
+		if (subList) {
+			const hlItems = subList.children;
+			for (let j = 0; j < hlItems.length; j++) {
+				const hlMarker = hlItems[j].querySelector(".hl-marker");
+				if (i < currentIdx) {
+					hlItems[j].className = "outline-highlight completed";
+					hlMarker.textContent = "\u2713";
+				} else if (i === currentIdx && j < currentHighlightIndex) {
+					hlItems[j].className = "outline-highlight completed";
+					hlMarker.textContent = "\u2713";
+				} else if (i === currentIdx && j === currentHighlightIndex) {
+					hlItems[j].className = "outline-highlight current";
+					hlMarker.textContent = "\u25B8";
+				} else {
+					hlItems[j].className = "outline-highlight";
+					hlMarker.textContent = "\u00B7";
+				}
+			}
+		}
 	}
 }
 
@@ -452,12 +545,15 @@ window.addEventListener("message", (event) => {
 			break;
 		}
 
-		case "highlight_advance":
+		case "highlight_advance": {
 			currentHighlightIndex = msg.highlightIndex;
 			totalHighlights = msg.totalHighlights;
 			awaitingHighlightAdvance = false;
 			renderHighlightProgress();
+			const hlIdx = state.segments.findIndex((s) => s.id === state.currentSegment);
+			if (hlIdx !== -1) renderOutline(hlIdx);
 			break;
+		}
 
 		case "update": {
 			const prevSegment = state.currentSegment;

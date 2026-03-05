@@ -85,6 +85,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		this.playbackCompleteResolve = undefined;
 	}
 
+	/** Suspend audio in webview (freeze in place for mid-highlight pause). */
+	sendAudioSuspend(): void {
+		this.postMessage({ type: "audio_suspend" });
+		// Resolve any pending playback wait so the old highlight loop can exit
+		this.playbackCompleteResolve?.();
+		this.playbackCompleteResolve = undefined;
+	}
+
+	/** Resume suspended audio in webview. */
+	sendAudioResume(): void {
+		this.postMessage({ type: "audio_resume" });
+	}
+
 	/** Returns a promise that resolves when the webview signals playback is done */
 	waitForPlaybackComplete(): Promise<void> {
 		return new Promise((resolve) => {

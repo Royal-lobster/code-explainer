@@ -151,6 +151,43 @@ export function activate(context: vscode.ExtensionContext): void {
 	// When navigating prev_highlight across segment boundary, we want to start
 	// from the last highlight of the previous segment instead of the default 0.
 	let pendingHighlightStart: number | undefined;
+	// True when audio was suspended (not stopped) during pause — allows exact-position resume
+	let hasSuspendedAudio = false;
+
+	/** Stop audio and reset suspended flag. Use this instead of sidebar.sendAudioStop() directly. */
+	function fullAudioStop(): void {
+		sidebar.sendAudioStop();
+		hasSuspendedAudio = false;
+	}
+
+	/** Resume from suspended audio — plays remaining buffered audio, then continues to next highlight. */
+	function resumeFromSuspended(): void {
+		hasSuspendedAudio = false;
+		const seg = walkthrough.getCurrentSegment();
+		if (!seg) return;
+		highlightLoopGeneration++;
+		const myGeneration = highlightLoopGeneration;
+		const highlightIdx = walkthrough.getHighlightIndex();
+
+		sidebar.sendAudioResume();
+
+		// Wait for the remaining buffered audio to finish
+		sidebar.waitForPlaybackComplete().then(() => {
+			if (myGeneration !== highlightLoopGeneration) return;
+			if (walkthrough.getState().status !== "playing") return;
+
+			// Continue from the next highlight
+			const nextIdx = highlightIdx + 1;
+			if (nextIdx < seg.highlights.length) {
+				playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
+					console.error("[code-explainer] Highlight loop error:", err);
+				});
+			} else {
+				// All highlights done — auto-advance to next segment
+				walkthrough.next();
+			}
+		});
+	}
 
 	/** Pre-warm the TTS server then resume playback from a specific highlight index. */
 	function preWarmAndResume(startHighlight: number): void {
@@ -158,7 +195,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		if (!seg) return;
 		highlightLoopGeneration++;
 		if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-		sidebar.sendAudioStop();
+		fullAudioStop();
 		sidebar.sendServerLoading(true);
 		const segId = seg.id;
 		ensureServer().then(() => {
@@ -234,7 +271,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			currentChunkAbort();
 			currentChunkAbort = undefined;
 		}
-		sidebar.sendAudioStop();
+		fullAudioStop();
 
 		const startIdx = pendingHighlightStart ?? 0;
 		pendingHighlightStart = undefined;
@@ -260,10 +297,11 @@ export function activate(context: vscode.ExtensionContext): void {
 				currentChunkAbort = undefined;
 			}
 			highlightLoopGeneration++;
-			// Only force-stop audio on pause (user wants silence now).
+			// On pause, suspend audio (freeze in place) for exact-position resume.
 			// On "stopped" (natural end), let webview audio drain naturally.
 			if (state.status === "paused") {
-				sidebar.sendAudioStop();
+				sidebar.sendAudioSuspend();
+				hasSuspendedAudio = true;
 			}
 		}
 
@@ -282,7 +320,11 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand('codeExplainer.togglePlayPause', () => {
 			walkthrough.togglePlayPause();
 			if (walkthrough.getState().status === "playing") {
-				preWarmAndResume(walkthrough.getHighlightIndex());
+				if (hasSuspendedAudio) {
+					resumeFromSuspended();
+				} else {
+					preWarmAndResume(walkthrough.getHighlightIndex());
+				}
 			}
 		}),
 		vscode.commands.registerCommand('codeExplainer.next', () => {
@@ -293,7 +335,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				const nextIdx = curIdx + 1;
 				highlightLoopGeneration++;
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.setHighlightIndex(nextIdx);
 				if (walkthrough.getState().status === "playing") {
 					playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
@@ -313,7 +355,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				const prevIdx = curIdx - 1;
 				highlightLoopGeneration++;
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.setHighlightIndex(prevIdx);
 				if (walkthrough.getState().status === "playing") {
 					playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
@@ -327,16 +369,16 @@ export function activate(context: vscode.ExtensionContext): void {
 		}),
 		vscode.commands.registerCommand('codeExplainer.nextSegment', () => {
 			if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-			sidebar.sendAudioStop();
+			fullAudioStop();
 			walkthrough.next();
 		}),
 		vscode.commands.registerCommand('codeExplainer.prevSegment', () => {
 			if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-			sidebar.sendAudioStop();
+			fullAudioStop();
 			walkthrough.prev();
 		}),
 		vscode.commands.registerCommand('codeExplainer.stop', () => {
-			sidebar.sendAudioStop();
+			fullAudioStop();
 			walkthrough.stop();
 		}),
 		vscode.commands.registerCommand('codeExplainer.speedUp', () => {
@@ -378,11 +420,15 @@ export function activate(context: vscode.ExtensionContext): void {
 			case "resume": {
 				const resumeHighlightIdx = walkthrough.getHighlightIndex();
 				walkthrough.play();
-				preWarmAndResume(resumeHighlightIdx);
+				if (hasSuspendedAudio) {
+					resumeFromSuspended();
+				} else {
+					preWarmAndResume(resumeHighlightIdx);
+				}
 				break;
 			}
 			case "stop":
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.stop();
 				break;
 		}
@@ -394,9 +440,13 @@ export function activate(context: vscode.ExtensionContext): void {
 		switch (msg.type) {
 			case "play_pause":
 				walkthrough.togglePlayPause();
-				// If resuming, pre-warm TTS server then resume from current highlight
+				// If resuming, try to resume suspended audio first for exact-position resume
 				if (walkthrough.getState().status === "playing") {
-					preWarmAndResume(walkthrough.getHighlightIndex());
+					if (hasSuspendedAudio) {
+						resumeFromSuspended();
+					} else {
+						preWarmAndResume(walkthrough.getHighlightIndex());
+					}
 				}
 				break;
 			case "next_highlight": {
@@ -408,14 +458,14 @@ export function activate(context: vscode.ExtensionContext): void {
 						const nextSegIdx = walkthrough.getState().currentIndex + 1;
 						if (nextSegIdx >= walkthrough.getState().segments.length) break; // At walkthrough end
 						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-								sidebar.sendAudioStop();
+								fullAudioStop();
 						walkthrough.next(); // emits "segment" → starts from highlight 0
 						break;
 					}
 					const nextIdx = curIdx + 1;
 					highlightLoopGeneration++;
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-					sidebar.sendAudioStop();
+					fullAudioStop();
 					walkthrough.setHighlightIndex(nextIdx);
 					if (walkthrough.getState().status === "playing") {
 						playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
@@ -443,14 +493,14 @@ export function activate(context: vscode.ExtensionContext): void {
 							pendingHighlightStart = prevHighlightCount - 1;
 						}
 						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-								sidebar.sendAudioStop();
+								fullAudioStop();
 						walkthrough.prev(); // emits "segment" → pendingHighlightStart used
 						break;
 					}
 					const prevIdx = curIdx - 1;
 					highlightLoopGeneration++;
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-					sidebar.sendAudioStop();
+					fullAudioStop();
 					walkthrough.setHighlightIndex(prevIdx);
 					if (walkthrough.getState().status === "playing") {
 						playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
@@ -465,17 +515,17 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 			case "next":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.next();
 				break;
 			case "prev":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.prev();
 				break;
 			case "goto_segment":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				walkthrough.goto(msg.segmentId);
 				break;
 			case "speed_change":
@@ -492,7 +542,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				break;
 			case "restart": {
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				sidebar.sendAudioStop();
+				fullAudioStop();
 				const segments = walkthrough.getState().segments;
 				if (segments.length > 0) {
 					walkthrough.goto(segments[0].id);

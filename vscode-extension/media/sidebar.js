@@ -115,6 +115,26 @@ function stopAudio() {
 	deferredPlaybackComplete = false;
 }
 
+/** Suspend AudioContext to freeze audio in place (pause mid-highlight). */
+function suspendAudio() {
+	if (audioCtx && audioCtx.state === "running") {
+		audioCtx.suspend();
+	}
+	// Don't clear sources or nextPlayTime — we want to resume from here
+}
+
+/** Resume AudioContext and wait for remaining buffered audio to finish. */
+function resumeAudio() {
+	if (audioCtx && audioCtx.state === "suspended" && activeSources.length > 0) {
+		audioCtx.resume().then(() => {
+			waitForActiveSourcesToFinish();
+		});
+	} else {
+		// Nothing to resume — signal immediately so extension can re-stream
+		vscode.postMessage({ type: "playback_complete" });
+	}
+}
+
 /**
  * Wait for all active audio sources to finish, then send playback_complete.
  * If no sources are active (already drained), sends immediately.
@@ -584,6 +604,14 @@ window.addEventListener("message", (event) => {
 
 		case "audio_stop":
 			stopAudio();
+			break;
+
+		case "audio_suspend":
+			suspendAudio();
+			break;
+
+		case "audio_resume":
+			resumeAudio();
 			break;
 	}
 });

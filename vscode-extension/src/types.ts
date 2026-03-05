@@ -108,6 +108,14 @@ export interface WebviewAudioStopMessage {
 	type: "audio_stop";
 }
 
+export interface WebviewAudioSuspendMessage {
+	type: "audio_suspend";
+}
+
+export interface WebviewAudioResumeMessage {
+	type: "audio_resume";
+}
+
 export interface WebviewHighlightAdvanceMessage {
 	type: "highlight_advance";
 	highlightIndex: number;
@@ -125,6 +133,8 @@ export type ToWebviewMessage =
 	| WebviewAudioChunkMessage
 	| WebviewAudioEndMessage
 	| WebviewAudioStopMessage
+	| WebviewAudioSuspendMessage
+	| WebviewAudioResumeMessage
 	| WebviewHighlightAdvanceMessage
 	| WebviewServerLoadingMessage;
 

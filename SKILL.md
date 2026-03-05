@@ -7,6 +7,18 @@ description: "Use when the user asks to explain, walk through, or understand a f
 
 Interactive code walkthrough. Scans the codebase for a feature, builds a segment plan, then walks through each segment — highlighting code in VS Code and explaining at their chosen depth.
 
+## Models
+
+Configure your preferred models here. All docs reference these tiers by name — change them once and the whole skill updates.
+
+| Tier | Default | Role |
+|------|---------|------|
+| `LARGE` | `claude-opus-4-5` | Deep Dive planner — narrative reasoning, transition objects |
+| `MEDIUM` | `claude-sonnet-4-5` | Deep Dive segment agents — deep code reading, dense highlights |
+| `SMALL` | `claude-haiku-4-5` | Scout, Overview plan+highlights — fast exploration and scanning |
+
+When dispatching sub-agents, look up the model for the tier and use that exact model name.
+
 ## Checklist
 
 Complete these steps in order:
@@ -15,10 +27,10 @@ Complete these steps in order:
    - **Sidebar check (Bash):** `PORT=$(cat ~/.claude-explainer-port 2>/dev/null) && TOKEN=$(cat ~/.claude-explainer-token 2>/dev/null) && curl -sf -H "Authorization: Bearer $TOKEN" "http://localhost:$PORT/api/health"` — `{"status":"ok"}` means sidebar is active. When active, **NEVER output walkthrough content as terminal text**; all output goes through sidebar HTTP API only.
    - **Assess familiarity (AskUserQuestion):** Read `docs/assess.md` and ask preferences.
 
-1. **Scout** — Read `docs/scan.md`. Dispatch Haiku sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
+1. **Scout** — Read `docs/scan.md`. Dispatch `SMALL` sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
 2. **Plan + generate** — Two paths depending on depth:
-   - **Overview** — Single Haiku sub-agent reads scout output, builds plan, generates highlights in one pass. Send `set_plan` when done.
-   - **Deep Dive** — Read `docs/plan.md`. Dispatch Sonnet planner to build narrative + transition objects, send stub `set_plan` immediately. Then read `docs/segments.md` and dispatch parallel Sonnet segment agents (capped at 5). Fire `replace_segment` as each completes.
+   - **Overview** — Single `SMALL` sub-agent reads scout output, builds plan, generates highlights in one pass. Send `set_plan` when done.
+   - **Deep Dive** — Read `docs/plan.md`. Dispatch `LARGE` planner to build narrative + transition objects, send stub `set_plan` immediately. Then read `docs/segments.md` and dispatch parallel `MEDIUM` segment agents (capped at 5). Fire `replace_segment` as each completes.
 3. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
 4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
@@ -43,4 +55,5 @@ Complete these steps in order:
 | Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send stub `set_plan` via `explainer.sh plan` before any `goto` or `replace_segment` messages |
 | Waiting for all segments before showing plan | Deep Dive: send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |
 | Scout generating highlights | Scout only maps files and call chain. Highlights are generated in step 2 (Overview: single agent, Deep Dive: parallel agents) |
-| Running planner + parallel agents for Overview | Overview uses one fast Haiku agent for plan + highlights. Planner and segment agents are Deep Dive only |
+| Running planner + parallel agents for Overview | Overview uses one fast `SMALL` agent for plan + highlights. Planner and segment agents are Deep Dive only |
+| Using tier names as literal model names | `LARGE`, `MEDIUM`, `SMALL` are placeholders — always resolve to the actual model name from the Models table in SKILL.md before dispatching |

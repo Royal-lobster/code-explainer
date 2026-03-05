@@ -2,14 +2,14 @@
 
 > **Overview mode** skips this step — a single Haiku agent builds plan + highlights in one pass and sends `set_plan` directly.
 
-Dispatch a **Sonnet sub-agent** to turn the scout's file map into a narrative plan. The planner decides *how to tell the story*, not just what files exist.
+Dispatch a **`LARGE`** sub-agent to turn the scout's file map into a narrative plan. The planner decides *how to tell the story*, not just what files exist.
 
 Immediately after the planner finishes, send a **stub `set_plan`** to the sidebar so the user sees the outline while segment agents run in the background.
 
 ## Planner sub-agent
 
 Agent tool parameters:
-- `model`: `sonnet`
+- `model`: `LARGE` ← replace with model from SKILL.md
 - `description`: `Plan walkthrough narrative for {feature}`
 
 ### Prompt template

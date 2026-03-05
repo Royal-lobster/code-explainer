@@ -7,7 +7,7 @@ Dispatch **one sub-agent per segment** in parallel. Each agent reads its file de
 ## Per-segment sub-agent
 
 Agent tool parameters:
-- `model`: `sonnet`
+- `model`: `MEDIUM` ← replace with model from SKILL.md
 - `description`: `Generate highlights for {segment.title}`
 
 ### Prompt template

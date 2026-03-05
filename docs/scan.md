@@ -1,10 +1,10 @@
 # Step 1: Scout the Codebase
 
-Dispatch a **Haiku sub-agent** to discover relevant files and map the call chain. The scout does not generate highlights — it only maps the territory.
+Dispatch a **`SMALL`** sub-agent to discover relevant files and map the call chain. The scout does not generate highlights — it only maps the territory.
 
 Agent tool parameters:
 - `subagent_type`: `Explore`
-- `model`: `haiku`
+- `model`: `SMALL` ← replace with model from SKILL.md
 - `description`: `Scout codebase for {feature}`
 
 ## Prompt template

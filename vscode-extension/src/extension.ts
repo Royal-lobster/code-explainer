@@ -6,7 +6,7 @@ import { Walkthrough } from "./walkthrough";
 import { ExplainerServer } from "./server";
 import { SidebarProvider } from "./sidebar";
 import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights, enableSmoothScrolling, restoreSmoothScrolling } from "./highlight";
-import { streamTTS, isTTSAvailable } from "./tts-bridge";
+import { streamTTS, isTTSAvailable, ensureServer } from "./tts-bridge";
 import type { AgentMessage, FromWebviewMessage, Segment, Highlight } from "./types";
 
 // ── File-watcher fallback (backward compat) ──
@@ -287,9 +287,16 @@ export function activate(context: vscode.ExtensionContext): void {
 				break;
 			case "resume":
 				walkthrough.play();
-				// Re-trigger current segment to restart TTS
+				// Pre-warm TTS server then re-trigger segment
 				const seg = walkthrough.getCurrentSegment();
-				if (seg) walkthrough.emit("segment", seg);
+				if (seg) {
+					const gen = ++highlightLoopGeneration;
+					ensureServer().then(() => {
+						if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
+							walkthrough.emit("segment", seg);
+						}
+					});
+				}
 				break;
 			case "stop":
 				sidebar.sendAudioStop();
@@ -304,10 +311,18 @@ export function activate(context: vscode.ExtensionContext): void {
 		switch (msg.type) {
 			case "play_pause":
 				walkthrough.togglePlayPause();
-				// If resuming, re-trigger segment for TTS
+				// If resuming, pre-warm TTS server then re-trigger segment
 				if (walkthrough.getState().status === "playing") {
 					const seg = walkthrough.getCurrentSegment();
-					if (seg) walkthrough.emit("segment", seg);
+					if (seg) {
+						const gen = ++highlightLoopGeneration;
+						ensureServer().then(() => {
+							// Guard: user may have paused during server startup
+							if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
+								walkthrough.emit("segment", seg);
+							}
+						});
+					}
 				}
 				break;
 			case "next":
@@ -341,6 +356,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				// Mute is handled in webview's Web Audio GainNode
 				break;
 			case "restart": {
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+				if (abortTTS) abortTTS();
+				sidebar.sendAudioStop();
 				const segments = walkthrough.getState().segments;
 				if (segments.length > 0) {
 					walkthrough.goto(segments[0].id);

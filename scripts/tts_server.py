@@ -23,12 +23,15 @@ import socket
 import struct
 import subprocess
 import sys
+import threading
+import time
 
 SOCKET_PATH = "/tmp/tts-server.sock"
 PID_FILE = "/tmp/tts-server.pid"
 DEFAULT_VOICE = os.environ.get("TTS_VOICE", "af_heart")
 DEFAULT_SPEED = float(os.environ.get("TTS_SPEED", "1.0"))
 DEFAULT_MODEL = os.environ.get("TTS_MODEL", "prince-canuma/Kokoro-82M")
+IDLE_TIMEOUT = int(os.environ.get("TTS_IDLE_TIMEOUT", "300"))  # 5 min default
 
 
 def load_tts(model_id: str):
@@ -74,11 +77,34 @@ def cleanup(*_):
     sys.exit(0)
 
 
-def run_server():
+def is_server_alive() -> bool:
+    """Check if an existing TTS server process is still running."""
     try:
-        os.unlink(SOCKET_PATH)
-    except OSError:
-        pass
+        with open(PID_FILE, "r") as f:
+            pid = int(f.read().strip())
+        os.kill(pid, 0)  # signal 0 = check if alive
+        return True
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        return False
+
+
+def cleanup_stale():
+    """Remove stale socket and PID file from a dead server."""
+    for path in (SOCKET_PATH, PID_FILE):
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
+def run_server():
+    # If another server is alive, exit instead of fighting for the socket
+    if is_server_alive():
+        print("[tts-server] Another instance is already running, exiting.", flush=True)
+        sys.exit(0)
+
+    # Clean up stale files from a crashed previous run
+    cleanup_stale()
 
     with open(PID_FILE, "w") as f:
         f.write(str(os.getpid()))
@@ -87,6 +113,27 @@ def run_server():
     signal.signal(signal.SIGINT, cleanup)
 
     pipeline = load_tts(DEFAULT_MODEL)
+    last_activity = time.monotonic()
+
+    def idle_watchdog():
+        """Shut down the server after IDLE_TIMEOUT seconds of inactivity."""
+        while True:
+            time.sleep(30)
+            idle = time.monotonic() - last_activity
+            if idle >= IDLE_TIMEOUT:
+                print(
+                    f"[tts-server] Idle for {int(idle)}s, shutting down to free memory.",
+                    flush=True,
+                )
+                # Send SIGTERM to main thread — sys.exit() from a daemon thread
+                # only kills the thread, not the process
+                os.kill(os.getpid(), signal.SIGTERM)
+                return
+
+    if IDLE_TIMEOUT > 0:
+        watchdog = threading.Thread(target=idle_watchdog, daemon=True)
+        watchdog.start()
+        print(f"[tts-server] Will auto-shutdown after {IDLE_TIMEOUT}s idle.", flush=True)
 
     server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     server.bind(SOCKET_PATH)
@@ -109,7 +156,14 @@ def run_server():
                 conn.close()
                 continue
 
+            last_activity = time.monotonic()
+
             request = json.loads(data.decode("utf-8"))
+
+            if request.get("ping"):
+                conn.sendall(struct.pack("!I", 0))
+                continue
+
             text = request.get("text", "").strip()
             voice = request.get("voice", DEFAULT_VOICE)
             speed = request.get("speed", DEFAULT_SPEED)

@@ -257,6 +257,10 @@ body {
 	overflow-y: auto;
 }
 
+.explanation-box:has(.explanation-text:empty) {
+	display: none;
+}
+
 .explanation-text {
 	font-size: 0.9em;
 	line-height: 1.5;

@@ -45,8 +45,6 @@ Or use the skill command:
 |---------|--------|
 | **Play / Pause** | Toggle autoplay |
 | **Next / Previous** | Navigate between segments |
-| **Go Deeper** | Re-explain with more detail |
-| **Zoom Out** | Re-explain at overview level |
 | **Speed** | Adjust TTS playback speed |
 | **Volume** | Adjust TTS volume |
 | **Voice** | Select TTS voice |
@@ -61,8 +59,6 @@ You can also type commands in your agent's chat:
 | `next` | Move to next segment |
 | `skip` | Skip current segment |
 | `skip to 4` | Jump to segment 4 |
-| `go deeper` | Re-explain with more detail |
-| `zoom out` | Re-explain at overview level |
 | `pause` | Stop autoplay |
 | `mute` / `unmute` | Toggle voice narration |
 | `stop` | End walkthrough |

@@ -60,4 +60,4 @@ For `ttsText` formatting rules, see `docs/tts.md`. Key rule: plain text only, no
 Segment {current}/{total} -- say "next" to continue, or ask any questions.
 ```
 
-Handle: "next"→proceed, question→answer then ask if ready, "skip"→next, "skip to {N}"→jump, "go deeper"→Detailed depth, "zoom out"→Overview depth, "stop"→wrap-up, "mute"/"unmute"→toggle TTS.
+Handle: "next"→proceed, question→answer then ask if ready, "skip"→next, "skip to {N}"→jump, "stop"→wrap-up, "mute"/"unmute"→toggle TTS.

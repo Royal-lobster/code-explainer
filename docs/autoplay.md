@@ -48,12 +48,7 @@ The sidebar loads the plan and shows the first segment's code location. Playback
 ~/.claude/skills/explainer/scripts/explainer.sh wait-action 60
 ```
 
-Returns e.g. `{"type": "user_action", "action": "go_deeper", "segmentId": 3}`. Handle with:
-
-```bash
-~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "insert_after", "afterSegment": 3, "segments": [...]}'
-~/.claude/skills/explainer/scripts/explainer.sh send '{"type": "resume"}'
-```
+Returns e.g. `{"type": "user_action", "action": "next", "segmentId": 3}`. Handle as needed with `goto`, `insert_after`, or `resume` commands.
 
 4. **Other commands:** `explainer.sh state` (check state), `explainer.sh stop` (stop walkthrough).
 
@@ -82,6 +77,6 @@ Required for segments > 30 lines. Optional for smaller. Skip for < 10 lines.
 
 ## User controls
 
-The sidebar handles Play/Pause, Next/Prev, Go Deeper, Zoom Out, speed, volume, voice, and outline navigation. The agent only needs to respond to `wait-action` events.
+The sidebar handles Play/Pause, Next/Prev, speed, volume, voice, and outline navigation. The agent only needs to respond to `wait-action` events.
 
 See `docs/tts.md` for voice config.

@@ -122,9 +122,9 @@ header "Configure AI models"
 SKILL_FILE="$SCRIPT_DIR/SKILL.md"
 
 # Read current values from SKILL.md
-CURRENT_LARGE=$(python3 -c "import re; m=re.search(r'\| \`LARGE\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-opus-4-5')" 2>/dev/null || echo "claude-opus-4-5")
-CURRENT_MEDIUM=$(python3 -c "import re; m=re.search(r'\| \`MEDIUM\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-sonnet-4-5')" 2>/dev/null || echo "claude-sonnet-4-5")
-CURRENT_SMALL=$(python3 -c "import re; m=re.search(r'\| \`SMALL\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-haiku-4-5')" 2>/dev/null || echo "claude-haiku-4-5")
+CURRENT_LARGE=$(python3 -c "import re; m=re.search(r'\| \`LARGE\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-opus')" 2>/dev/null || echo "claude-opus")
+CURRENT_MEDIUM=$(python3 -c "import re; m=re.search(r'\| \`MEDIUM\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-sonnet')" 2>/dev/null || echo "claude-sonnet")
+CURRENT_SMALL=$(python3 -c "import re; m=re.search(r'\| \`SMALL\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'claude-haiku')" 2>/dev/null || echo "claude-haiku")
 
 echo ""
 echo -e "  Default model configuration:"

@@ -86,13 +86,19 @@ export class WalkthroughStorage {
 		const filePath = path.join(this.walkthroughsDir, `${slug}.json`);
 		try {
 			const raw = await fs.promises.readFile(filePath, "utf-8");
-			const data: WalkthroughFile = JSON.parse(raw);
+			const data = JSON.parse(raw);
+			if (typeof data.title !== "string" || !Array.isArray(data.segments)) {
+				return null;
+			}
 			return {
 				title: data.title,
 				segments: this.toAbsolutePaths(data.segments),
 			};
-		} catch {
-			return null;
+		} catch (err: unknown) {
+			if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
+				return null;
+			}
+			throw err;
 		}
 	}
 

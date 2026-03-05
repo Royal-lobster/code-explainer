@@ -499,7 +499,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// ── Webview messages → walkthrough state + server ──
 
-	sidebar.setMessageHandler((msg: FromWebviewMessage) => {
+	sidebar.setMessageHandler(async (msg: FromWebviewMessage) => {
 		switch (msg.type) {
 			case "play_pause":
 				walkthrough.togglePlayPause();
@@ -612,6 +612,27 @@ export function activate(context: vscode.ExtensionContext): void {
 				}
 				break;
 			}
+			case "save":
+				vscode.commands.executeCommand('codeExplainer.saveWalkthrough');
+				break;
+			case "load":
+				if (storage) {
+					const data = await storage.load(msg.name);
+					if (data) {
+						walkthrough.setPlan(data.title, data.segments);
+						sidebar.reveal();
+					}
+				}
+				break;
+			case "request_saved_list":
+				if (storage) {
+					const list = await storage.list();
+					sidebar.postMessage({
+						type: "saved_list",
+						walkthroughs: list.map(({ name, title }) => ({ name, title })),
+					});
+				}
+				break;
 		}
 	});
 

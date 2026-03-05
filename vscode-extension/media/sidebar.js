@@ -195,6 +195,7 @@ function render() {
 		idleView.style.display = "";
 		activeView.style.display = "none";
 		doneView.style.display = "none";
+		vscode.postMessage({ type: "request_saved_list" });
 		return;
 	}
 
@@ -202,6 +203,7 @@ function render() {
 		idleView.style.display = "";
 		activeView.style.display = "none";
 		doneView.style.display = "none";
+		vscode.postMessage({ type: "request_saved_list" });
 		return;
 	}
 
@@ -494,6 +496,10 @@ document.getElementById("btn-restart").addEventListener("click", () => {
 	vscode.postMessage({ type: "restart" });
 });
 
+document.getElementById("btn-save").addEventListener("click", () => {
+	vscode.postMessage({ type: "save" });
+});
+
 document.getElementById("volume-slider").addEventListener("input", (e) => {
 	volume = parseInt(e.target.value, 10) / 100;
 	updateVolume();
@@ -618,6 +624,27 @@ window.addEventListener("message", (event) => {
 		case "audio_resume":
 			resumeAudio();
 			break;
+
+		case "saved_list": {
+			const section = document.getElementById("saved-list-section");
+			const list = document.getElementById("saved-list");
+			if (msg.walkthroughs.length === 0) {
+				section.style.display = "none";
+				break;
+			}
+			section.style.display = "";
+			list.innerHTML = "";
+			for (const wt of msg.walkthroughs) {
+				const li = document.createElement("li");
+				li.className = "saved-item";
+				li.textContent = wt.title;
+				li.addEventListener("click", () => {
+					vscode.postMessage({ type: "load", name: wt.name });
+				});
+				list.appendChild(li);
+			}
+			break;
+		}
 	}
 });
 

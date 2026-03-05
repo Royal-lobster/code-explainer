@@ -128,6 +128,11 @@ export interface WebviewServerLoadingMessage {
 	loading: boolean;
 }
 
+export interface WebviewSavedListMessage {
+	type: "saved_list";
+	walkthroughs: Array<{ name: string; title: string }>;
+}
+
 export type ToWebviewMessage =
 	| WebviewUpdateMessage
 	| WebviewAudioChunkMessage
@@ -136,7 +141,8 @@ export type ToWebviewMessage =
 	| WebviewAudioSuspendMessage
 	| WebviewAudioResumeMessage
 	| WebviewHighlightAdvanceMessage
-	| WebviewServerLoadingMessage;
+	| WebviewServerLoadingMessage
+	| WebviewSavedListMessage;
 
 export interface WebviewPlayPauseMessage {
 	type: "play_pause";
@@ -190,6 +196,19 @@ export interface WebviewPlaybackCompleteMessage {
 	type: "playback_complete";
 }
 
+export interface WebviewSaveMessage {
+	type: "save";
+}
+
+export interface WebviewLoadMessage {
+	type: "load";
+	name: string;
+}
+
+export interface WebviewRequestSavedListMessage {
+	type: "request_saved_list";
+}
+
 export type FromWebviewMessage =
 	| WebviewPlayPauseMessage
 	| WebviewNextMessage
@@ -202,4 +221,7 @@ export type FromWebviewMessage =
 	| WebviewRestartMessage
 	| WebviewPlaybackCompleteMessage
 	| WebviewNextHighlightMessage
-	| WebviewPrevHighlightMessage;
+	| WebviewPrevHighlightMessage
+	| WebviewSaveMessage
+	| WebviewLoadMessage
+	| WebviewRequestSavedListMessage;

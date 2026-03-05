@@ -452,3 +452,52 @@ body {
 .done-restart-btn:hover {
 	background: var(--vscode-button-secondaryHoverBackground);
 }
+
+/* ── Save button ── */
+
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.save-btn {
+	background: none;
+	border: none;
+	color: var(--vscode-foreground);
+	cursor: pointer;
+	opacity: 0.6;
+	padding: 4px;
+	border-radius: 4px;
+	transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.save-btn:hover {
+	opacity: 1;
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* ── Saved walkthroughs list ── */
+
+.saved-list-title {
+	font-size: 0.9em;
+	font-weight: 600;
+	margin: 24px 0 8px;
+	opacity: 0.8;
+}
+
+#saved-list {
+	list-style: none;
+}
+
+.saved-item {
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 0.9em;
+	transition: background 0.15s ease;
+}
+
+.saved-item:hover {
+	background: var(--vscode-list-hoverBackground);
+}

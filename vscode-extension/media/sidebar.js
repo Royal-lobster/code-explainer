@@ -293,22 +293,15 @@ function renderHighlightProgress() {
 
 	const idx = state.segments.findIndex((s) => s.id === state.currentSegment);
 
-	const prevHighlightBtn = document.getElementById("btn-prev-highlight");
-	const nextHighlightBtn = document.getElementById("btn-next-highlight");
-
 	if (totalHighlights > 1) {
 		counter.textContent =
 			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
-		prevHighlightBtn.classList.add("visible");
-		nextHighlightBtn.classList.add("visible");
-		// Disable at boundaries — subsegment buttons don't cross segment boundaries
-		prevHighlightBtn.disabled = currentHighlightIndex <= 0;
-		nextHighlightBtn.disabled = currentHighlightIndex >= totalHighlights - 1;
 	} else {
 		counter.textContent = `${idx + 1}/${state.segments.length}`;
-		prevHighlightBtn.classList.remove("visible");
-		nextHighlightBtn.classList.remove("visible");
 	}
+
+	// Update nav button icons based on current highlight count
+	updateNavIcons();
 }
 
 /** Track segment IDs used for the last full outline build */
@@ -462,7 +455,27 @@ function simpleMarkdown(text) {
 
 let holdPaused = false;
 
+// ── Shift modifier tracking ──
+
+let shiftHeld = false;
+
+function updateNavIcons() {
+	const showSegment = shiftHeld || totalHighlights <= 1;
+	document.querySelectorAll("#btn-prev, #btn-next").forEach((btn) => {
+		const highlightIcon = btn.querySelector(".icon-highlight");
+		const segmentIcon = btn.querySelector(".icon-segment");
+		if (highlightIcon && segmentIcon) {
+			highlightIcon.style.display = showSegment ? "none" : "";
+			segmentIcon.style.display = showSegment ? "" : "none";
+		}
+	});
+}
+
 document.addEventListener("keydown", (e) => {
+	if (e.key === "Shift" && !shiftHeld) {
+		shiftHeld = true;
+		updateNavIcons();
+	}
 	if (e.code === "Space" && !e.repeat) {
 		// Don't intercept space on interactive elements
 		if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") {
@@ -479,6 +492,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keyup", (e) => {
+	if (e.key === "Shift") {
+		shiftHeld = false;
+		updateNavIcons();
+	}
 	if (e.code === "Space") {
 		// Don't intercept space on interactive elements
 		if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") {
@@ -492,9 +509,10 @@ document.addEventListener("keyup", (e) => {
 	}
 });
 
-// Reset holdPaused on blur to prevent stuck state
 window.addEventListener("blur", () => {
 	holdPaused = false;
+	shiftHeld = false;
+	updateNavIcons();
 });
 
 // ── Event handlers ──
@@ -505,19 +523,19 @@ document.getElementById("btn-play-pause").addEventListener("click", () => {
 });
 
 document.getElementById("btn-next").addEventListener("click", () => {
-	vscode.postMessage({ type: "next" });
+	if (shiftHeld || totalHighlights <= 1) {
+		vscode.postMessage({ type: "next" });
+	} else {
+		vscode.postMessage({ type: "next_highlight" });
+	}
 });
 
 document.getElementById("btn-prev").addEventListener("click", () => {
-	vscode.postMessage({ type: "prev" });
-});
-
-document.getElementById("btn-next-highlight").addEventListener("click", () => {
-	vscode.postMessage({ type: "next_highlight" });
-});
-
-document.getElementById("btn-prev-highlight").addEventListener("click", () => {
-	vscode.postMessage({ type: "prev_highlight" });
+	if (shiftHeld || totalHighlights <= 1) {
+		vscode.postMessage({ type: "prev" });
+	} else {
+		vscode.postMessage({ type: "prev_highlight" });
+	}
 });
 
 document.getElementById("btn-restart").addEventListener("click", () => {

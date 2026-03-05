@@ -180,6 +180,13 @@ def run_server():
 
 def find_venv_python():
     """Find the venv Python that has mlx-audio installed."""
+    # Check TTS_WORKSPACE_ROOT first (set by VS Code extension)
+    workspace_root = os.environ.get("TTS_WORKSPACE_ROOT")
+    if workspace_root:
+        venv_python = os.path.join(workspace_root, ".venv", "bin", "python3")
+        if os.path.isfile(venv_python):
+            return os.path.abspath(venv_python)
+    # Fallback: relative to script (works when script is in project/scripts/)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     venv_python = os.path.join(script_dir, "..", ".venv", "bin", "python3")
     if os.path.isfile(venv_python):

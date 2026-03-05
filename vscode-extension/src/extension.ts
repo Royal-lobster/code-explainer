@@ -6,7 +6,7 @@ import { Walkthrough } from "./walkthrough";
 import { ExplainerServer } from "./server";
 import { SidebarProvider } from "./sidebar";
 import { highlightRange, highlightSegmentRange, highlightSubRange, clearHighlights, disposeHighlights, enableSmoothScrolling, restoreSmoothScrolling } from "./highlight";
-import { streamTTS, isTTSAvailable, ensureServer } from "./tts-bridge";
+import { streamTTS, isTTSAvailable, ensureServer, setWorkspaceRoot } from "./tts-bridge";
 import type { AgentMessage, FromWebviewMessage, Segment, Highlight } from "./types";
 
 // ── File-watcher fallback (backward compat) ──
@@ -113,6 +113,10 @@ function playHighlightChunk(
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+	// Set workspace root so TTS bridge can find venv Python
+	const wsFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+	if (wsFolder) setWorkspaceRoot(wsFolder);
+
 	const walkthrough = new Walkthrough();
 	const sidebar = new SidebarProvider(context.extensionUri);
 	const server = new ExplainerServer(walkthrough);
@@ -291,7 +295,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				const seg = walkthrough.getCurrentSegment();
 				if (seg) {
 					const gen = ++highlightLoopGeneration;
+					sidebar.sendServerLoading(true);
 					ensureServer().then(() => {
+						sidebar.sendServerLoading(false);
 						if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
 							walkthrough.emit("segment", seg);
 						}
@@ -316,7 +322,9 @@ export function activate(context: vscode.ExtensionContext): void {
 					const seg = walkthrough.getCurrentSegment();
 					if (seg) {
 						const gen = ++highlightLoopGeneration;
+						sidebar.sendServerLoading(true);
 						ensureServer().then(() => {
+							sidebar.sendServerLoading(false);
 							// Guard: user may have paused during server startup
 							if (gen === highlightLoopGeneration && walkthrough.getState().status === "playing") {
 								walkthrough.emit("segment", seg);

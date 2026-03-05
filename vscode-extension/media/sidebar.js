@@ -415,6 +415,16 @@ window.addEventListener("message", (event) => {
 	const msg = event.data;
 
 	switch (msg.type) {
+		case "server_loading": {
+			const btn = document.getElementById("btn-play-pause");
+			if (msg.loading) {
+				btn.classList.add("loading");
+			} else {
+				btn.classList.remove("loading");
+			}
+			break;
+		}
+
 		case "highlight_advance":
 			currentHighlightIndex = msg.highlightIndex;
 			totalHighlights = msg.totalHighlights;
@@ -436,6 +446,7 @@ window.addEventListener("message", (event) => {
 			break;
 
 		case "audio_chunk":
+			document.getElementById("btn-play-pause").classList.remove("loading");
 			playAudioChunk(msg.data, msg.sampleRate);
 			break;
 

@@ -7,7 +7,6 @@ const SOCKET_PATH = "/tmp/tts-server.sock";
 const PID_FILE = "/tmp/tts-server.pid";
 const SAMPLE_RATE = 24000;
 const SERVER_START_TIMEOUT_MS = 30_000;
-const SERVER_SCRIPT = path.resolve(__dirname, "..", "..", "scripts", "tts_server.py");
 
 export interface TTSOptions {
 	voice: string;
@@ -67,14 +66,50 @@ function pingServer(): Promise<boolean> {
 	});
 }
 
+let workspaceRoot: string | undefined;
+
+/**
+ * Set the workspace root so we can find the TTS server script and venv Python.
+ * Call this from extension.ts during activation.
+ */
+export function setWorkspaceRoot(root: string): void {
+	workspaceRoot = root;
+}
+
+/** Known locations to search for the code-explainer project root. */
+function getProjectRootCandidates(): string[] {
+	const candidates: string[] = [];
+	if (workspaceRoot) candidates.push(workspaceRoot);
+	// The code-explainer repo (hardcoded fallback)
+	const home = process.env.HOME || "";
+	if (home) {
+		candidates.push(path.join(home, "Developer", "Personal", "code-explainer"));
+		// Skills directory (hardlinked copy)
+		candidates.push(path.join(home, ".claude", "skills", "explainer"));
+	}
+	return candidates;
+}
+
+/**
+ * Resolve the path to the TTS server script.
+ */
+function getServerScript(): string | undefined {
+	for (const root of getProjectRootCandidates()) {
+		const p = path.join(root, "scripts", "tts_server.py");
+		if (fs.existsSync(p)) return p;
+	}
+	return undefined;
+}
+
 /**
  * Find the venv Python that has mlx-audio installed.
  */
 function findVenvPython(): string {
-	const scriptDir = path.dirname(SERVER_SCRIPT);
-	const venvPython = path.join(scriptDir, "..", ".venv", "bin", "python3");
-	if (fs.existsSync(venvPython)) {
-		return path.resolve(venvPython);
+	for (const root of getProjectRootCandidates()) {
+		const venvPython = path.join(root, ".venv", "bin", "python3");
+		if (fs.existsSync(venvPython)) {
+			return path.resolve(venvPython);
+		}
 	}
 	return "python3";
 }
@@ -85,8 +120,9 @@ function findVenvPython(): string {
  */
 function startServer(): Promise<boolean> {
 	return new Promise((resolve) => {
-		if (!fs.existsSync(SERVER_SCRIPT)) {
-			console.error("[tts-bridge] Server script not found:", SERVER_SCRIPT);
+		const serverScript = getServerScript();
+		if (!serverScript) {
+			console.error("[tts-bridge] Server script not found in workspace:", workspaceRoot);
 			resolve(false);
 			return;
 		}
@@ -94,7 +130,10 @@ function startServer(): Promise<boolean> {
 		const pythonBin = findVenvPython();
 		console.log(`[tts-bridge] Starting TTS server daemon using ${pythonBin}...`);
 
-		cp.execFile(pythonBin, [SERVER_SCRIPT, "--daemon"], { timeout: 10_000 }, (err) => {
+		const env = { ...process.env };
+		if (workspaceRoot) env.TTS_WORKSPACE_ROOT = workspaceRoot;
+
+		cp.execFile(pythonBin, [serverScript, "--daemon"], { timeout: 10_000, env }, (err) => {
 			if (err) {
 				console.error("[tts-bridge] Failed to start server daemon:", err);
 				clearInterval(poll);
@@ -266,5 +305,5 @@ export function isTTSAvailable(): boolean {
 	}
 	// Even if server is down, we can auto-start it — so report available
 	// if the server script exists (meaning TTS is installed)
-	return fs.existsSync(SERVER_SCRIPT);
+	return getServerScript() !== undefined;
 }

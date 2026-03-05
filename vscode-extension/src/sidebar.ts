@@ -92,6 +92,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
+	sendServerLoading(loading: boolean): void {
+		this.postMessage({ type: "server_loading", loading });
+	}
+
 	sendHighlightAdvance(highlightIndex: number, totalHighlights: number): void {
 		this.postMessage({
 			type: "highlight_advance",

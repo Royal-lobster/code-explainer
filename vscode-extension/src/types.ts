@@ -114,12 +114,18 @@ export interface WebviewHighlightAdvanceMessage {
 	totalHighlights: number;
 }
 
+export interface WebviewServerLoadingMessage {
+	type: "server_loading";
+	loading: boolean;
+}
+
 export type ToWebviewMessage =
 	| WebviewUpdateMessage
 	| WebviewAudioChunkMessage
 	| WebviewAudioEndMessage
 	| WebviewAudioStopMessage
-	| WebviewHighlightAdvanceMessage;
+	| WebviewHighlightAdvanceMessage
+	| WebviewServerLoadingMessage;
 
 export interface WebviewPlayPauseMessage {
 	type: "play_pause";

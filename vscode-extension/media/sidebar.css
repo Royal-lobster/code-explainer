@@ -151,6 +151,32 @@ body {
 	transform: scale(0.92);
 }
 
+/* ── Play button loading spinner ── */
+
+.controls .play-btn {
+	position: relative;
+}
+
+#btn-play-pause.loading::before {
+	content: "";
+	position: absolute;
+	inset: -5px;
+	border-radius: 50%;
+	border: 2.5px solid color-mix(in srgb, var(--vscode-button-background) 25%, transparent);
+	border-top-color: var(--vscode-button-background);
+	animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+	to { transform: rotate(360deg); }
+}
+
+#btn-play-pause.loading {
+	animation: none;
+	pointer-events: none;
+	opacity: 0.8;
+}
+
 /* ── Play button pulse animation (glow pulse) ── */
 
 @keyframes play-pulse {

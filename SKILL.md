@@ -30,7 +30,7 @@ Complete these steps in order:
 1. **Scout** — Read `docs/scan.md`. Dispatch `SMALL` sub-agent to discover relevant files and map the call chain. No highlights yet — discovery only.
 2. **Plan + generate** — Two paths depending on depth:
    - **Overview** — Single `SMALL` sub-agent reads scout output, builds plan, generates highlights in one pass. Send `set_plan` when done.
-   - **Deep Dive** — Read `docs/plan.md`. Dispatch `LARGE` planner to build narrative + transition objects, send stub `set_plan` immediately. Then read `docs/segments.md` and dispatch parallel `MEDIUM` segment agents (capped at 5). Fire `replace_segment` as each completes.
+   - **Deep Dive** — Read `docs/plan.md`. Dispatch `LARGE` planner to build narrative + transition objects. Then read `docs/segments.md` and dispatch parallel `MEDIUM` segment agents (capped at 5). Wait for ALL agents to complete, then send one full `set_plan` with complete highlights. Do NOT send anything to the sidebar until everything is ready.
 3. **Execute walkthrough** — Read the doc for chosen mode: `docs/walkthrough.md`, `docs/read.md`, or `docs/podcast.md`. Walkthrough and podcast reference `docs/tts.md`.
 4. **Wrap up** — 3-5 key takeaways, how feature fits the broader architecture, offer to dive deeper or explain related features.
 
@@ -52,8 +52,8 @@ Complete these steps in order:
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
 | Sub-highlights too broad | Deep Dive: 1 line per highlight, 15-30 per segment. Every arg, assignment, and condition gets its own highlight. Overview: 1-8 lines, 3-6 per segment |
 | Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` for exact schema |
-| Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send stub `set_plan` via `explainer.sh plan` before any `goto` or `replace_segment` messages |
-| Waiting for all segments before showing plan | Deep Dive: send stub `set_plan` immediately after planner. Fire `replace_segment` per agent as they finish. Don't batch |
+| Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send `set_plan` via `explainer.sh plan` before any `goto` messages |
+| Sending plan before agents finish | Wait for ALL parallel segment agents to complete. Send one `set_plan` with full highlights. Never send stubs or partial plans |
 | Scout generating highlights | Scout only maps files and call chain. Highlights are generated in step 2 (Overview: single agent, Deep Dive: parallel agents) |
 | Running planner + parallel agents for Overview | Overview uses one fast `SMALL` agent for plan + highlights. Planner and segment agents are Deep Dive only |
 | Using tier names as literal model names | `LARGE`, `MEDIUM`, `SMALL` are placeholders — always resolve to the actual model name from the Models table in SKILL.md before dispatching |

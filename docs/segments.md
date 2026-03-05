@@ -2,7 +2,7 @@
 
 > **Overview mode** skips this step — the planner agent already sent `set_plan` with complete highlights.
 
-Dispatch **one sub-agent per segment** in parallel. Each agent reads its file deeply and generates dense, granular highlights. As each finishes, fire a `replace_segment` to populate the sidebar live.
+Dispatch **one sub-agent per segment** in parallel. Each agent reads its file deeply and generates dense, granular highlights. Wait for ALL agents to complete before sending anything to the sidebar.
 
 ## Per-segment sub-agent
 
@@ -82,25 +82,30 @@ Not this:
 ]
 ```
 
-## Fire replace_segment as each agent completes
+## Wait for all agents, then send one complete `set_plan`
 
-Do not wait for all agents. As soon as one returns its JSON, send it:
+Do NOT send anything to the sidebar until every agent has returned. Once all segments are ready, assemble them into a single `set_plan` and send it:
 
 ```bash
-~/.claude/skills/explainer/scripts/explainer.sh send '{
-  "type": "replace_segment",
-  "id": {id},
-  "segment": { ...segment JSON... }
-}'
+cat > /tmp/walkthrough-plan.json << 'EOF'
+{
+  "type": "set_plan",
+  "title": "{feature} Walkthrough",
+  "segments": [
+    { ...segment 1 with full highlights... },
+    { ...segment 2 with full highlights... },
+    ...
+  ]
+}
+EOF
+~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
 ```
-
-The sidebar updates live as segments populate. The user can start the walkthrough as soon as the first few segments are ready — they don't need to wait for all of them.
 
 ## Concurrency ceiling
 
-Cap at **5 parallel agents** to avoid rate limits. If there are more segments, queue the remainder and dispatch as slots free up. The progressive `replace_segment` streaming makes queuing invisible to the user.
+Cap at **5 parallel agents** to avoid rate limits. If there are more segments, queue the remainder and dispatch as slots free up.
 
-## After all segments are populated
+## After `set_plan` is sent
 
 Proceed to the walkthrough execution doc for the chosen delivery mode:
 - **Walkthrough mode** → `docs/walkthrough.md` (sidebar handles playback)

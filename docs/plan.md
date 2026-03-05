@@ -4,7 +4,7 @@
 
 Dispatch a **`LARGE`** sub-agent to turn the scout's file map into a narrative plan. The planner decides *how to tell the story*, not just what files exist.
 
-Immediately after the planner finishes, send a **stub `set_plan`** to the sidebar so the user sees the outline while segment agents run in the background.
+After the planner finishes, proceed to dispatch segment agents. Do NOT send anything to the sidebar yet — wait until all segment agents have completed and you have full highlights for every segment.
 
 ## Planner sub-agent
 
@@ -48,40 +48,9 @@ Rules:
 Return a JSON array of segment objects.
 ```
 
-## Immediately after the planner finishes
+## After the planner finishes
 
-**1. Send a stub `set_plan` to the sidebar** (if active) with empty highlights. This makes the outline visible right away while segment agents generate in the background.
-
-```json
-{
-  "type": "set_plan",
-  "title": "{feature} Walkthrough",
-  "segments": [
-    {
-      "id": 1,
-      "file": "/absolute/path/to/file.ts",
-      "start": 10,
-      "end": 45,
-      "title": "HTTP endpoint handler",
-      "explanation": "Generating...",
-      "highlights": [{ "start": 10, "end": 45, "ttsText": "Generating..." }]
-    }
-  ]
-}
-```
-
-```bash
-cat > /tmp/walkthrough-plan.json << 'EOF'
-{ "type": "set_plan", "title": "...", "segments": [...] }
-EOF
-~/.claude/skills/explainer/scripts/explainer.sh plan /tmp/walkthrough-plan.json
-```
-
-**2. Proceed to Step 3** — pass the planner's transition objects to the segment agents.
-
-## Present plan to user
-
-After sending to sidebar, also show the plan in chat so the user can reorder or skip segments before generation begins:
+Show the plan outline in chat so the user can reorder or skip segments before generation begins:
 
 ```
 I'll walk through {feature} in {N} segments:
@@ -91,5 +60,7 @@ I'll walk through {feature} in {N} segments:
 3. src/services/auth.service.ts:20-65 — Core authentication logic [core]
 ...
 
-Generating detailed explanations in the background. Say "go" to start, or adjust the plan first.
+Say "go" to start generating, or adjust the plan first.
 ```
+
+Once the user approves, proceed to Step 3 — pass the planner's transition objects to the segment agents.

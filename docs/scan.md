@@ -24,7 +24,7 @@ Return a structured result:
 - **Walkthrough plan**: ordered list of segments, each as:
   {file_absolute_path}:{start}-{end} -- {title} [{complexity}]
     Sub-highlights (2-5 per segment):
-      - {start}-{end} -- {ttsText: 1-2 sentence plain-text narration}
+      - {start}-{end} -- {ttsText: 1-2 sentence plain-text narration} [explanation: optional markdown explanation]
 
   IMPORTANT — field names must match the sidebar API exactly:
   - `start` / `end` (not startLine / endLine)

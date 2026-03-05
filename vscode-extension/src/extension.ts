@@ -225,7 +225,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			if (myGeneration !== highlightLoopGeneration) return;
 
 			wt.setHighlightIndex(i);
-			sb.sendHighlightAdvance(i, highlights.length);
+			sb.sendHighlightAdvance(i, highlights.length, highlights[i].explanation);
 
 			const chunk = playHighlightChunk(
 				segment,
@@ -461,7 +461,7 @@ export function activate(context: vscode.ExtensionContext): void {
 							console.error("[code-explainer] Highlight loop error:", err);
 						});
 					} else {
-						sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length);
+						sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length, seg.highlights[nextIdx].explanation);
 						highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end, seg.highlights).catch(() => {});
 					}
 				}
@@ -498,7 +498,7 @@ export function activate(context: vscode.ExtensionContext): void {
 							console.error("[code-explainer] Highlight loop error:", err);
 						});
 					} else {
-						sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length);
+						sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length, seg.highlights[prevIdx].explanation);
 						highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end, seg.highlights).catch(() => {});
 					}
 				}

@@ -4,6 +4,7 @@ export interface Highlight {
 	start: number;   // 1-based line number
 	end: number;     // 1-based line number
 	ttsText: string; // narration for these specific lines
+	explanation?: string; // optional per-highlight explanation
 }
 
 export interface Segment {
@@ -112,6 +113,7 @@ export interface WebviewHighlightAdvanceMessage {
 	type: "highlight_advance";
 	highlightIndex: number;
 	totalHighlights: number;
+	explanation?: string;
 }
 
 export interface WebviewServerLoadingMessage {

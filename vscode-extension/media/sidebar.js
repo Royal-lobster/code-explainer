@@ -27,8 +27,6 @@ let muted = false;
 let audioPlaying = false;
 let currentHighlightIndex = 0;
 let totalHighlights = 0;
-/** True while waiting for the first highlight_advance after a segment change */
-let awaitingHighlightAdvance = false;
 /** True when audio_end arrived but chunks are still pending (AudioContext suspended) */
 let deferredPlaybackComplete = false;
 
@@ -137,54 +135,14 @@ function waitForActiveSourcesToFinish() {
 }
 
 function onAudioEnd() {
-	// Multi-highlight mode: wait for actual Web Audio playback to finish,
+	// Wait for actual Web Audio playback to finish,
 	// then signal the extension so it can advance to the next sub-highlight.
-	if (totalHighlights >= 1) {
-		// If chunks are still pending (AudioContext suspended), defer until they're flushed
-		if (pendingChunks.length > 0) {
-			deferredPlaybackComplete = true;
-			return;
-		}
-		waitForActiveSourcesToFinish();
+	// If chunks are still pending (AudioContext suspended), defer until they're flushed.
+	if (pendingChunks.length > 0) {
+		deferredPlaybackComplete = true;
 		return;
 	}
-
-	// If AudioContext is suspended (no user gesture yet), chunks are queued
-	// but nothing actually played — don't auto-advance.
-	if (!audioCtx || audioCtx.state === "suspended") {
-		audioPlaying = false;
-		return;
-	}
-
-	// If an update just reset totalHighlights and we haven't received
-	// highlight_advance yet, this audio_end is stale (from the previous
-	// segment). Don't auto-advance — the new segment's highlights will
-	// arrive shortly.
-	if (awaitingHighlightAdvance) {
-		audioPlaying = false;
-		return;
-	}
-
-	// Legacy single-highlight: auto-advance to next segment
-	if (activeSources.length === 0) {
-		autoAdvance();
-		return;
-	}
-	const lastSource = activeSources[activeSources.length - 1];
-	const originalOnEnded = lastSource.onended;
-	lastSource.onended = (e) => {
-		if (originalOnEnded) originalOnEnded.call(lastSource, e);
-		if (state.status === "playing") {
-			autoAdvance();
-		}
-	};
-}
-
-function autoAdvance() {
-	audioPlaying = false;
-	if (state.status === "playing") {
-		vscode.postMessage({ type: "next" });
-	}
+	waitForActiveSourcesToFinish();
 }
 
 function updateVolume() {
@@ -613,7 +571,6 @@ window.addEventListener("message", (event) => {
 		case "highlight_advance": {
 			currentHighlightIndex = msg.highlightIndex;
 			totalHighlights = msg.totalHighlights;
-			awaitingHighlightAdvance = false;
 			renderHighlightProgress();
 			const hlIdx = state.segments.findIndex((s) => s.id === state.currentSegment);
 			if (hlIdx !== -1) renderOutline(hlIdx);
@@ -657,7 +614,6 @@ window.addEventListener("message", (event) => {
 			if (state.status !== "paused") {
 				holdPaused = false;
 			}
-			awaitingHighlightAdvance = state.status === "playing";
 			render();
 			renderHighlightProgress();
 			break;

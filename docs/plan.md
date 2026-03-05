@@ -20,7 +20,6 @@ Build a `set_plan` JSON message matching the sidebar API schema exactly:
       "end": 45,
       "title": "HTTP endpoint, request validation",
       "explanation": "",
-      "ttsText": "",
       "highlights": [
         { "start": 10, "end": 20, "ttsText": "Plain text narration for this sub-range.", "explanation": "Optional markdown explanation for this highlight." },
         { "start": 25, "end": 40, "ttsText": "Plain text narration for this sub-range." }
@@ -36,8 +35,7 @@ Build a `set_plan` JSON message matching the sidebar API schema exactly:
 - `start` / `end`: 1-based line numbers (NOT `startLine` / `endLine`)
 - `title`: short segment label (NOT `label` or `description`)
 - `explanation`: markdown explanation (can be empty at plan time, filled during walkthrough)
-- `ttsText`: plain-text narration (can be empty at plan time, filled during walkthrough)
-- `highlights`: optional sub-ranges, each with `start`, `end`, `ttsText`, `explanation` (optional)
+- `highlights`: required sub-ranges (minimum 1), each with `start`, `end`, `ttsText`, `explanation` (optional)
 
 Send via:
 ```bash

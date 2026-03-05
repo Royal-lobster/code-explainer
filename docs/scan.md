@@ -29,7 +29,7 @@ Return a structured result:
   IMPORTANT — field names must match the sidebar API exactly:
   - `start` / `end` (not startLine / endLine)
   - `title` (not label or description)
-  - Sub-highlights use `start` / `end` / `ttsText`
+  - `highlights`: required array of sub-ranges (minimum 1), each with `start`, `end`, `ttsText`
 
   {complexity} is one of:
   - `[core]` — central logic. Explain thoroughly.

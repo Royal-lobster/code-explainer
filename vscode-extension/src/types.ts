@@ -14,8 +14,7 @@ export interface Segment {
 	end: number;
 	title: string;
 	explanation: string;
-	ttsText: string;
-	highlights?: Highlight[];
+	highlights: Highlight[];
 }
 
 // ── Agent → Extension messages (HTTP + WS) ──

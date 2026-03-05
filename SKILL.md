@@ -13,9 +13,9 @@ Configure your preferred models here. All docs reference these tiers by name —
 
 | Tier | Default | Role |
 |------|---------|------|
-| `LARGE` | `claude-opus` | Deep Dive planner — narrative reasoning, transition objects |
-| `MEDIUM` | `claude-sonnet` | Deep Dive segment agents — deep code reading, dense highlights |
-| `SMALL` | `claude-haiku` | Scout, Overview plan+highlights — fast exploration and scanning |
+| `LARGE` | `opus` | Deep Dive planner — narrative reasoning, transition objects |
+| `MEDIUM` | `sonnet` | Deep Dive segment agents — deep code reading, dense highlights |
+| `SMALL` | `haiku` | Scout, Overview plan+highlights — fast exploration and scanning |
 
 When dispatching sub-agents, look up the model for the tier and use that exact model name.
 

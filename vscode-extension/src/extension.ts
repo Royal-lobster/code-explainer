@@ -429,7 +429,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				);
 				if (overwrite !== "Overwrite") return;
 			}
-			const filePath = await storage.save(state.title, state.segments, name);
+			await storage.save(state.title, state.segments, name);
 			vscode.window.showInformationMessage(`Walkthrough saved to .walkthroughs/${name}.json`);
 		}),
 		vscode.commands.registerCommand('codeExplainer.loadWalkthrough', async () => {
@@ -446,12 +446,11 @@ export function activate(context: vscode.ExtensionContext): void {
 				items.map((item) => ({
 					label: item.title,
 					description: item.name,
-					name: item.name,
 				})),
 				{ placeHolder: "Select a walkthrough to load" }
 			);
 			if (!pick) return;
-			const data = await storage.load((pick as any).name);
+			const data = await storage.load(pick.description!);
 			if (!data) {
 				vscode.window.showErrorMessage("Failed to load walkthrough");
 				return;

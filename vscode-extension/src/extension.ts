@@ -146,11 +146,6 @@ export function activate(context: vscode.ExtensionContext): void {
 	let currentChunkAbort: (() => void) | undefined;
 	let highlightLoopGeneration = 0;
 
-	/** Pre-warm the TTS server then emit the current segment. */
-	function preWarmAndEmit(): void {
-		preWarmAndResume(0);
-	}
-
 	/** Pre-warm the TTS server then resume playback from a specific highlight index. */
 	function preWarmAndResume(startHighlight: number): void {
 		const seg = walkthrough.getCurrentSegment();
@@ -158,8 +153,11 @@ export function activate(context: vscode.ExtensionContext): void {
 		if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 		sidebar.sendAudioStop();
 		sidebar.sendServerLoading(true);
+		const segId = seg.id;
 		ensureServer().then(() => {
 			sidebar.sendServerLoading(false);
+			// Guard: segment may have changed while server was warming up
+			if (walkthrough.getCurrentSegment()?.id !== segId) return;
 			if (walkthrough.getState().status === "playing") {
 				playSegmentHighlights(seg, walkthrough, sidebar, startHighlight).catch((err) => {
 					console.error("[code-explainer] Highlight loop error:", err);
@@ -345,7 +343,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (seg?.highlights && seg.highlights.length > 0) {
 					const nextIdx = Math.min(walkthrough.getHighlightIndex() + 1, seg.highlights.length - 1);
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-					if (abortTTS) abortTTS();
+					if (abortTTS) { abortTTS(); abortTTS = undefined; }
 					sidebar.sendAudioStop();
 					walkthrough.setHighlightIndex(nextIdx);
 					if (walkthrough.getState().status === "playing") {
@@ -361,7 +359,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				if (seg?.highlights && seg.highlights.length > 0) {
 					const prevIdx = Math.max(walkthrough.getHighlightIndex() - 1, 0);
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-					if (abortTTS) abortTTS();
+					if (abortTTS) { abortTTS(); abortTTS = undefined; }
 					sidebar.sendAudioStop();
 					walkthrough.setHighlightIndex(prevIdx);
 					if (walkthrough.getState().status === "playing") {
@@ -374,19 +372,19 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 			case "next":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				if (abortTTS) abortTTS();
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
 				sidebar.sendAudioStop();
 				walkthrough.next();
 				break;
 			case "prev":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				if (abortTTS) abortTTS();
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
 				sidebar.sendAudioStop();
 				walkthrough.prev();
 				break;
 			case "goto_segment":
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				if (abortTTS) abortTTS();
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
 				sidebar.sendAudioStop();
 				walkthrough.goto(msg.segmentId);
 				break;
@@ -404,7 +402,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				break;
 			case "restart": {
 				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
-				if (abortTTS) abortTTS();
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
 				sidebar.sendAudioStop();
 				const segments = walkthrough.getState().segments;
 				if (segments.length > 0) {

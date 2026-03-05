@@ -50,35 +50,40 @@ Generate a JSON segment object:
 }
 
 Highlight rules:
-- **1 line per highlight** — the default. Only group into 2-3 lines when lines are truly inseparable (e.g., a multi-line string literal or chained call that can't be split).
-- Aim for **15-30 highlights per segment** in Deep Dive. More is better.
-- Every meaningful line gets its own highlight: each constructor arg, each assignment, each condition branch, each return value.
-- `ttsText`: **one short sentence**, plain text only. Label what the line does, not how. "This sets the retry limit to three attempts." not a paragraph.
-- `explanation`: 2-5 word label shown in sidebar. "Retry limit", "Auth token", "Error fallback". Think tooltip, not prose.
+
+Think of highlights as a **teacher's pointer**, not PowerPoint slides. The teacher talks while pointing at different parts of the board — the pointer moves fast, the voice flows. Each highlight is "look here" while I explain, not a separate mini-lecture.
+
+- **6-12 highlights per segment** in Deep Dive. Quality over quantity.
+- **1-4 lines per highlight**. Group related lines (e.g., a condition + its body, a variable + its usage). Only use single-line highlights for truly standalone key lines.
+- **Skip boilerplate**: imports, obvious field declarations, closing braces, standard enum values, trivial assignments. If a line is self-explanatory to someone reading code, don't highlight it.
+- **Highlight what's interesting**: non-obvious logic, key design decisions, the "why" lines, surprising patterns, error handling strategies, the lines that make this code *this* code rather than generic boilerplate.
+- `ttsText`: **1-2 sentences**, plain text only. Explain the *intent* or *why*, not just what the line does. "The retry budget is set to three — enough to recover from a nonce collision but not so many that a broken transaction loops forever." not "This sets the retry limit to three."
+- `explanation`: 2-5 word label shown in sidebar. "Retry budget", "Nonce recovery", "Balance gate". Think tooltip, not prose.
 - First highlight: open with a one-liner referencing previousContext. ("Picking up from the controller, here's where credentials are actually checked.")
-- `[wiring]` segments: still granular, but ttsText can be even shorter. "Registers the auth module." and move on.
-- `[core]` segments: hit every line. Don't skip anything that isn't pure boilerplate (imports, closing braces).
+- `[wiring]` segments: **3-5 highlights max**. Hit only the non-obvious config choices. "Registers the auth module." and move on.
+- `[core]` segments: **8-12 highlights**. Cover every important decision, skip standard patterns.
 
 Return only the JSON object, no prose.
 ```
 
 ### Example — constructor with 4 args
 
+Good — pointer style, group related lines:
+```json
+"highlights": [
+  { "start": 12, "end": 16, "ttsText": "Four services are injected — the interesting ones are UserRepository for database access and JwtService for token signing. The mailer and config service are standard NestJS plumbing.", "explanation": "DI dependencies" },
+  { "start": 18, "end": 18, "ttsText": "Token expiry is set from config right here in the constructor — no magic number buried deep in a method where you'd never find it.", "explanation": "Token expiry from config" }
+]
+```
+
+Not this — one highlight per line narrating the obvious:
 ```json
 "highlights": [
   { "start": 12, "end": 12, "ttsText": "The constructor opens here.", "explanation": "Constructor" },
   { "start": 13, "end": 13, "ttsText": "Injects the user repository for database access.", "explanation": "UserRepository" },
   { "start": 14, "end": 14, "ttsText": "Injects the JWT service for token signing.", "explanation": "JwtService" },
   { "start": 15, "end": 15, "ttsText": "Injects the mailer for sending verification emails.", "explanation": "MailerService" },
-  { "start": 16, "end": 16, "ttsText": "And the config service to pull environment values at runtime.", "explanation": "ConfigService" },
-  { "start": 18, "end": 18, "ttsText": "Immediately sets the token expiry from config — no magic number buried in the method.", "explanation": "Token expiry" }
-]
-```
-
-Not this:
-```json
-"highlights": [
-  { "start": 12, "end": 18, "ttsText": "The constructor injects dependencies and sets up config values.", "explanation": "Constructor" }
+  { "start": 16, "end": 16, "ttsText": "And the config service to pull environment values at runtime.", "explanation": "ConfigService" }
 ]
 ```
 

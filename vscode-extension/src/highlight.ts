@@ -20,6 +20,15 @@ const activeDecoration = vscode.window.createTextEditorDecorationType({
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 });
 
+// Gap lines: between highlights within a segment (context code, not narrated)
+const gapDecoration = vscode.window.createTextEditorDecorationType({
+	opacity: "0.55",
+	isWholeLine: true,
+	borderWidth: "0 0 0 2px",
+	borderStyle: "dotted",
+	borderColor: "rgba(255, 190, 60, 0.2)",
+});
+
 // Track current segment range for computing dim regions
 let currentSegmentStart = 0;
 let currentSegmentEnd = 0;
@@ -99,6 +108,7 @@ export async function highlightSegmentRange(
 	// Clear sub-highlight decorations
 	editor.setDecorations(segmentDimDecoration, []);
 	editor.setDecorations(activeDecoration, []);
+	editor.setDecorations(gapDecoration, []);
 
 	const startPos = new vscode.Position(zeroStart, 0);
 	const endPos = new vscode.Position(zeroEnd, doc.lineAt(zeroEnd).text.length);
@@ -117,6 +127,7 @@ export async function highlightSubRange(
 	filePath: string,
 	startLine: number,
 	endLine: number,
+	allHighlights?: { start: number; end: number }[],
 ): Promise<void> {
 	const zeroStart = Math.max(0, startLine - 1);
 	const zeroEnd = Math.max(zeroStart, endLine - 1);
@@ -132,9 +143,36 @@ export async function highlightSubRange(
 	const dimRanges = buildOuterDimRanges(doc, currentSegmentStart, currentSegmentEnd);
 	editor.setDecorations(dimDecoration, dimRanges);
 
-	// Lightly dim non-active segment lines
-	const segDimRanges = buildSegmentDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
-	editor.setDecorations(segmentDimDecoration, segDimRanges);
+	// Compute gap vs non-active highlight ranges when we have highlight info
+	if (allHighlights && allHighlights.length > 0) {
+		const highlightedLines = new Set<number>();
+		for (const hl of allHighlights) {
+			for (let l = Math.max(0, hl.start - 1); l <= Math.max(0, hl.end - 1); l++) {
+				highlightedLines.add(l);
+			}
+		}
+
+		const gapRanges: vscode.Range[] = [];
+		const nonActiveHighlightRanges: vscode.Range[] = [];
+
+		for (let i = currentSegmentStart; i <= currentSegmentEnd; i++) {
+			if (i >= zeroStart && i <= zeroEnd) continue; // active highlight
+			const line = doc.lineAt(i);
+			if (highlightedLines.has(i)) {
+				nonActiveHighlightRanges.push(new vscode.Range(line.range.start, line.range.end));
+			} else {
+				gapRanges.push(new vscode.Range(line.range.start, line.range.end));
+			}
+		}
+
+		editor.setDecorations(segmentDimDecoration, nonActiveHighlightRanges);
+		editor.setDecorations(gapDecoration, gapRanges);
+	} else {
+		// Fallback: no highlight info, use existing behavior
+		const segDimRanges = buildSegmentDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
+		editor.setDecorations(segmentDimDecoration, segDimRanges);
+		editor.setDecorations(gapDecoration, []);
+	}
 
 	// Apply gold border to active lines
 	const startPos = new vscode.Position(zeroStart, 0);
@@ -199,6 +237,7 @@ export function clearHighlights(): void {
 		editor.setDecorations(dimDecoration, []);
 		editor.setDecorations(segmentDimDecoration, []);
 		editor.setDecorations(activeDecoration, []);
+		editor.setDecorations(gapDecoration, []);
 	}
 }
 
@@ -206,4 +245,5 @@ export function disposeHighlights(): void {
 	dimDecoration.dispose();
 	segmentDimDecoration.dispose();
 	activeDecoration.dispose();
+	gapDecoration.dispose();
 }

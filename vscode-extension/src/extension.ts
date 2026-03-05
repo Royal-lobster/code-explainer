@@ -68,6 +68,7 @@ function processHighlightFile(): void {
 function playHighlightChunk(
 	segment: Segment,
 	highlight: Highlight,
+	highlightIndex: number,
 	sidebar: SidebarProvider,
 	voice: string,
 	speed: number,
@@ -76,7 +77,7 @@ function playHighlightChunk(
 	let aborted = false;
 
 	const promise = new Promise<void>((resolve) => {
-		highlightSubRange(segment.file, highlight.start, highlight.end).catch(() => {});
+		highlightSubRange(segment.file, highlight.start, highlight.end, segment.highlights).catch(() => {});
 
 		if (highlight.ttsText && isTTSAvailable()) {
 			// Wait for the webview to signal actual playback completion,
@@ -223,6 +224,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			const chunk = playHighlightChunk(
 				segment,
 				highlights[i],
+				i,
 				sb,
 				ttsVoice,
 				ttsSpeed,
@@ -359,7 +361,7 @@ export function activate(context: vscode.ExtensionContext): void {
 						});
 					} else {
 						sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length);
-						highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end).catch(() => {});
+						highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end, seg.highlights).catch(() => {});
 					}
 				}
 				break;
@@ -384,7 +386,7 @@ export function activate(context: vscode.ExtensionContext): void {
 						});
 					} else {
 						sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length);
-						highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end).catch(() => {});
+						highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end, seg.highlights).catch(() => {});
 					}
 				}
 				break;

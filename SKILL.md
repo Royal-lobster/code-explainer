@@ -50,7 +50,7 @@ Complete these steps in order:
 | Ignoring complexity tags | `[core]` = thorough, `[wiring]` = breeze through, `[supporting]` = brief |
 | Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
-| Sub-highlights too many or too granular | Deep Dive: 6-12 highlights per segment, 1-4 lines each. Highlights are a pointer, not slides — skip boilerplate, hit what's interesting. Overview: 1-8 lines, 3-6 per segment |
+| Sub-highlights too many or too granular | Deep Dive: 6-12 highlights per segment, 1-4 lines each. Highlights are a moving pointer over one continuous voice stream — ttsText across highlights is concatenated and spoken as one TTS call, so write it as flowing narration, not self-contained slides. Overview: 1-8 lines, 3-6 per segment |
 | Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` for exact schema |
 | Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send `set_plan` via `explainer.sh plan` before any `goto` messages |
 | Sending plan before agents finish | Wait for ALL parallel segment agents to complete. Send one `set_plan` with full highlights. Never send stubs or partial plans |

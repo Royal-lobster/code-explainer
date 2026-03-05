@@ -196,6 +196,10 @@ export interface WebviewPlaybackCompleteMessage {
 	type: "playback_complete";
 }
 
+export interface WebviewChunkPlayedMessage {
+	type: "chunk_played";
+}
+
 export interface WebviewSaveMessage {
 	type: "save";
 }
@@ -224,6 +228,7 @@ export type FromWebviewMessage =
 	| WebviewMuteToggleMessage
 	| WebviewRestartMessage
 	| WebviewPlaybackCompleteMessage
+	| WebviewChunkPlayedMessage
 	| WebviewNextHighlightMessage
 	| WebviewPrevHighlightMessage
 	| WebviewSaveMessage

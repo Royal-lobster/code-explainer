@@ -8,6 +8,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 	private view?: vscode.WebviewView;
 	private onMessage?: (msg: FromWebviewMessage) => void | Promise<void>;
 	private playbackCompleteResolve?: () => void;
+	private chunkPlayedCallback?: () => void;
 
 	constructor(private readonly extensionUri: vscode.Uri) {}
 
@@ -33,6 +34,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 			if (msg.type === "playback_complete") {
 				this.playbackCompleteResolve?.();
 				this.playbackCompleteResolve = undefined;
+				return;
+			}
+			if (msg.type === "chunk_played") {
+				this.chunkPlayedCallback?.();
 				return;
 			}
 			this.onMessage?.(msg);
@@ -103,6 +108,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		return new Promise((resolve) => {
 			this.playbackCompleteResolve = resolve;
 		});
+	}
+
+	/** Register a callback fired each time the webview finishes playing one audio chunk. */
+	setChunkPlayedCallback(cb: (() => void) | undefined): void {
+		this.chunkPlayedCallback = cb;
 	}
 
 	sendServerLoading(loading: boolean): void {

@@ -51,13 +51,13 @@ Generate a JSON segment object:
 
 Highlight rules:
 
-Think of highlights as a **teacher's pointer**, not PowerPoint slides. The teacher talks while pointing at different parts of the board — the pointer moves fast, the voice flows. Each highlight is "look here" while I explain, not a separate mini-lecture.
+Think of highlights as a **teacher's pointer moving across the board while talking continuously**. All highlight `ttsText` within a segment is concatenated into one TTS call — the voice never stops, and the pointer advances mid-speech as each highlight's audio finishes playing. Write ttsText as **flowing narration**, not self-contained mini-lectures.
 
 - **6-12 highlights per segment** in Deep Dive. Quality over quantity.
 - **1-4 lines per highlight**. Group related lines (e.g., a condition + its body, a variable + its usage). Only use single-line highlights for truly standalone key lines.
 - **Skip boilerplate**: imports, obvious field declarations, closing braces, standard enum values, trivial assignments. If a line is self-explanatory to someone reading code, don't highlight it.
 - **Highlight what's interesting**: non-obvious logic, key design decisions, the "why" lines, surprising patterns, error handling strategies, the lines that make this code *this* code rather than generic boilerplate.
-- `ttsText`: **1-2 sentences**, plain text only. Explain the *intent* or *why*, not just what the line does. "The retry budget is set to three — enough to recover from a nonce collision but not so many that a broken transaction loops forever." not "This sets the retry limit to three."
+- `ttsText`: **1-2 sentences**, plain text only. Explain the *intent* or *why*, not just what the line does. Because highlights are spoken as one continuous stream, each ttsText should flow naturally from the previous one — use connectives ("Next," "From here," "Once that's done,") rather than restating context. "The retry budget is set to three — enough to recover from a nonce collision but not so many that a broken transaction loops forever." not "This sets the retry limit to three."
 - `explanation`: 2-5 word label shown in sidebar. "Retry budget", "Nonce recovery", "Balance gate". Think tooltip, not prose.
 - First highlight: open with a one-liner referencing previousContext. ("Picking up from the controller, here's where credentials are actually checked.")
 - `[wiring]` segments: **3-5 highlights max**. Hit only the non-obvious config choices. "Registers the auth module." and move on.
@@ -68,21 +68,21 @@ Return only the JSON object, no prose.
 
 ### Example — constructor with 4 args
 
-Good — pointer style, group related lines:
+Good — pointer style, flowing narration (these are spoken as one continuous stream):
 ```json
 "highlights": [
   { "start": 12, "end": 16, "ttsText": "Four services are injected — the interesting ones are UserRepository for database access and JwtService for token signing. The mailer and config service are standard NestJS plumbing.", "explanation": "DI dependencies" },
-  { "start": 18, "end": 18, "ttsText": "Token expiry is set from config right here in the constructor — no magic number buried deep in a method where you'd never find it.", "explanation": "Token expiry from config" }
+  { "start": 18, "end": 18, "ttsText": "And right below, token expiry is set from config in the constructor — no magic number buried deep in a method where you'd never find it.", "explanation": "Token expiry from config" }
 ]
 ```
 
-Not this — one highlight per line narrating the obvious:
+Not this — one highlight per line, self-contained statements that sound choppy when concatenated:
 ```json
 "highlights": [
   { "start": 12, "end": 12, "ttsText": "The constructor opens here.", "explanation": "Constructor" },
-  { "start": 13, "end": 13, "ttsText": "Injects the user repository for database access.", "explanation": "UserRepository" },
-  { "start": 14, "end": 14, "ttsText": "Injects the JWT service for token signing.", "explanation": "JwtService" },
-  { "start": 15, "end": 15, "ttsText": "Injects the mailer for sending verification emails.", "explanation": "MailerService" },
+  { "start": 13, "end": 13, "ttsText": "This injects the user repository for database access.", "explanation": "UserRepository" },
+  { "start": 14, "end": 14, "ttsText": "This injects the JWT service for token signing.", "explanation": "JwtService" },
+  { "start": 15, "end": 15, "ttsText": "This injects the mailer for sending verification emails.", "explanation": "MailerService" },
   { "start": 16, "end": 16, "ttsText": "And the config service to pull environment values at runtime.", "explanation": "ConfigService" }
 ]
 ```

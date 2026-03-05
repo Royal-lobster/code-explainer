@@ -6,6 +6,9 @@
 #   explainer.sh state                 Get current walkthrough state
 #   explainer.sh wait-action [timeout] Wait for user action (default 30s)
 #   explainer.sh stop                  Stop the walkthrough
+#   explainer.sh save [name]           Save current walkthrough
+#   explainer.sh load <name>           Load a saved walkthrough
+#   explainer.sh list                  List saved walkthroughs
 
 PORT_FILE="$HOME/.claude-explainer-port"
 TOKEN_FILE="$HOME/.claude-explainer-token"
@@ -60,8 +63,35 @@ case "$1" in
             -H "$AUTH_HEADER" \
             -d '{"type": "stop"}'
         ;;
+    save)
+        NAME="${2:-}"
+        if [ -n "$NAME" ]; then
+            curl -s -X POST "$BASE/api/save" \
+                -H 'Content-Type: application/json' \
+                -H "$AUTH_HEADER" \
+                -d "{\"name\": \"$NAME\"}"
+        else
+            curl -s -X POST "$BASE/api/save" \
+                -H 'Content-Type: application/json' \
+                -H "$AUTH_HEADER" \
+                -d '{}'
+        fi
+        ;;
+    load)
+        if [ -z "$2" ]; then
+            echo "Usage: explainer.sh load <name>" >&2
+            exit 1
+        fi
+        curl -s -X POST "$BASE/api/load" \
+            -H 'Content-Type: application/json' \
+            -H "$AUTH_HEADER" \
+            -d "{\"name\": \"$2\"}"
+        ;;
+    list)
+        curl -s -H "$AUTH_HEADER" "$BASE/api/walkthroughs"
+        ;;
     *)
-        echo "Usage: explainer.sh {plan|send|state|wait-action|stop}" >&2
+        echo "Usage: explainer.sh {plan|send|state|wait-action|stop|save|load|list}" >&2
         exit 1
         ;;
 esac

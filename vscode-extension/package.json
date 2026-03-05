@@ -12,6 +12,26 @@
 	"activationEvents": ["*"],
 	"main": "./out/extension.js",
 	"contributes": {
+		"commands": [
+			{ "command": "codeExplainer.togglePlayPause", "title": "Code Explainer: Toggle Play/Pause" },
+			{ "command": "codeExplainer.next", "title": "Code Explainer: Next Sub-segment" },
+			{ "command": "codeExplainer.prev", "title": "Code Explainer: Previous Sub-segment" },
+			{ "command": "codeExplainer.nextSegment", "title": "Code Explainer: Next Segment" },
+			{ "command": "codeExplainer.prevSegment", "title": "Code Explainer: Previous Segment" },
+			{ "command": "codeExplainer.stop", "title": "Code Explainer: Stop Walkthrough" },
+			{ "command": "codeExplainer.speedUp", "title": "Code Explainer: Speed Up" },
+			{ "command": "codeExplainer.speedDown", "title": "Code Explainer: Speed Down" }
+		],
+		"keybindings": [
+			{ "command": "codeExplainer.togglePlayPause", "key": "ctrl+shift+space", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.next", "key": "ctrl+shift+]", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.prev", "key": "ctrl+shift+[", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.nextSegment", "key": "ctrl+shift+alt+]", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.prevSegment", "key": "ctrl+shift+alt+[", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.stop", "key": "ctrl+shift+\\", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.speedUp", "key": "ctrl+shift+=", "when": "codeExplainer.walkthroughActive" },
+			{ "command": "codeExplainer.speedDown", "key": "ctrl+shift+-", "when": "codeExplainer.walkthroughActive" }
+		],
 		"viewsContainers": {
 			"activitybar": [
 				{

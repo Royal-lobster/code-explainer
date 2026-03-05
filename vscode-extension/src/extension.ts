@@ -129,6 +129,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		}),
 	);
 
+	// Initialize walkthrough-active context as false
+	vscode.commands.executeCommand('setContext', 'codeExplainer.walkthroughActive', false);
+
 	// Start file-watcher fallback
 	startFileWatcher();
 
@@ -272,6 +275,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	walkthrough.on("plan", () => {
 		sidebar.updateState(walkthrough.getState());
 		server.broadcastState();
+		vscode.commands.executeCommand('setContext', 'codeExplainer.walkthroughActive', true);
 	});
 
 	walkthrough.on("status", () => {
@@ -299,8 +303,94 @@ export function activate(context: vscode.ExtensionContext): void {
 		if (state.status === "stopped") {
 			clearHighlights();
 			restoreSmoothScrolling().catch(() => {});
+			vscode.commands.executeCommand('setContext', 'codeExplainer.walkthroughActive', false);
 		}
 	});
+
+	// ── Keybinding command registrations ──
+
+	const speedPresets = [0.75, 1, 1.25, 1.5, 2];
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('codeExplainer.togglePlayPause', () => {
+			walkthrough.togglePlayPause();
+			if (walkthrough.getState().status === "playing") {
+				preWarmAndResume(walkthrough.getHighlightIndex());
+			}
+		}),
+		vscode.commands.registerCommand('codeExplainer.next', () => {
+			const seg = walkthrough.getCurrentSegment();
+			if (seg?.highlights && seg.highlights.length > 0) {
+				const curIdx = walkthrough.getHighlightIndex();
+				if (curIdx >= seg.highlights.length - 1) return;
+				const nextIdx = curIdx + 1;
+				highlightLoopGeneration++;
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
+				sidebar.sendAudioStop();
+				walkthrough.setHighlightIndex(nextIdx);
+				if (walkthrough.getState().status === "playing") {
+					playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
+						console.error("[code-explainer] Highlight loop error:", err);
+					});
+				} else {
+					sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length);
+					highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end).catch(() => {});
+				}
+			}
+		}),
+		vscode.commands.registerCommand('codeExplainer.prev', () => {
+			const seg = walkthrough.getCurrentSegment();
+			if (seg?.highlights && seg.highlights.length > 0) {
+				const curIdx = walkthrough.getHighlightIndex();
+				if (curIdx <= 0) return;
+				const prevIdx = curIdx - 1;
+				highlightLoopGeneration++;
+				if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+				if (abortTTS) { abortTTS(); abortTTS = undefined; }
+				sidebar.sendAudioStop();
+				walkthrough.setHighlightIndex(prevIdx);
+				if (walkthrough.getState().status === "playing") {
+					playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
+						console.error("[code-explainer] Highlight loop error:", err);
+					});
+				} else {
+					sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length);
+					highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end).catch(() => {});
+				}
+			}
+		}),
+		vscode.commands.registerCommand('codeExplainer.nextSegment', () => {
+			if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+			if (abortTTS) { abortTTS(); abortTTS = undefined; }
+			sidebar.sendAudioStop();
+			walkthrough.next();
+		}),
+		vscode.commands.registerCommand('codeExplainer.prevSegment', () => {
+			if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+			if (abortTTS) { abortTTS(); abortTTS = undefined; }
+			sidebar.sendAudioStop();
+			walkthrough.prev();
+		}),
+		vscode.commands.registerCommand('codeExplainer.stop', () => {
+			sidebar.sendAudioStop();
+			walkthrough.stop();
+		}),
+		vscode.commands.registerCommand('codeExplainer.speedUp', () => {
+			const currentIdx = speedPresets.indexOf(ttsSpeed);
+			const idx = currentIdx === -1 ? 1 : currentIdx;
+			const nextIdx = Math.min(idx + 1, speedPresets.length - 1);
+			ttsSpeed = speedPresets[nextIdx];
+			vscode.window.setStatusBarMessage(`Speed: ${ttsSpeed}x`, 2000);
+		}),
+		vscode.commands.registerCommand('codeExplainer.speedDown', () => {
+			const currentIdx = speedPresets.indexOf(ttsSpeed);
+			const idx = currentIdx === -1 ? 1 : currentIdx;
+			const nextIdx = Math.max(idx - 1, 0);
+			ttsSpeed = speedPresets[nextIdx];
+			vscode.window.setStatusBarMessage(`Speed: ${ttsSpeed}x`, 2000);
+		}),
+	);
 
 	// ── Agent messages → walkthrough state ──
 

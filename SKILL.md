@@ -37,3 +37,5 @@ Complete these steps in order:
 | Sidebar check not parallelized | Dispatch Bash health check + AskUserQuestion in one response, not sequentially |
 | Text output when sidebar active | If health check returned ok, send plan JSON only — no terminal text |
 | Sub-highlights too broad | 5-15 lines each, target 30-60% coverage of segment, not a partition of the full range |
+| Wrong field names in sidebar JSON | Use `start`/`end`/`title`/`ttsText`/`highlights` — NOT `startLine`/`endLine`/`label`/`subHighlights`. See `docs/plan.md` step 3a for exact schema |
+| Skipping `set_plan` before `goto` | Sidebar needs the full plan loaded first. Always send `set_plan` via `explainer.sh plan` before any `goto` messages |

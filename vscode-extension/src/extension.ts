@@ -341,32 +341,68 @@ export function activate(context: vscode.ExtensionContext): void {
 			case "next_highlight": {
 				const seg = walkthrough.getCurrentSegment();
 				if (seg?.highlights && seg.highlights.length > 0) {
-					const nextIdx = Math.min(walkthrough.getHighlightIndex() + 1, seg.highlights.length - 1);
+					const curIdx = walkthrough.getHighlightIndex();
+					if (curIdx >= seg.highlights.length - 1) {
+						// At last sub-segment — advance to next segment
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.next();
+					} else {
+						const nextIdx = curIdx + 1;
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.setHighlightIndex(nextIdx);
+						if (walkthrough.getState().status === "playing") {
+							playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
+								console.error("[code-explainer] Highlight loop error:", err);
+							});
+						} else {
+							sidebar.sendHighlightAdvance(nextIdx, seg.highlights.length);
+							highlightSubRange(seg.file, seg.highlights[nextIdx].start, seg.highlights[nextIdx].end).catch(() => {});
+						}
+					}
+				} else {
+					// No highlights — skip to next segment
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 					if (abortTTS) { abortTTS(); abortTTS = undefined; }
 					sidebar.sendAudioStop();
-					walkthrough.setHighlightIndex(nextIdx);
-					if (walkthrough.getState().status === "playing") {
-						playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
-							console.error("[code-explainer] Highlight loop error:", err);
-						});
-					}
+					walkthrough.next();
 				}
 				break;
 			}
 			case "prev_highlight": {
 				const seg = walkthrough.getCurrentSegment();
 				if (seg?.highlights && seg.highlights.length > 0) {
-					const prevIdx = Math.max(walkthrough.getHighlightIndex() - 1, 0);
+					const curIdx = walkthrough.getHighlightIndex();
+					if (curIdx <= 0) {
+						// At first sub-segment — go to previous segment
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.prev();
+					} else {
+						const prevIdx = curIdx - 1;
+						if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
+						if (abortTTS) { abortTTS(); abortTTS = undefined; }
+						sidebar.sendAudioStop();
+						walkthrough.setHighlightIndex(prevIdx);
+						if (walkthrough.getState().status === "playing") {
+							playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
+								console.error("[code-explainer] Highlight loop error:", err);
+							});
+						} else {
+							sidebar.sendHighlightAdvance(prevIdx, seg.highlights.length);
+							highlightSubRange(seg.file, seg.highlights[prevIdx].start, seg.highlights[prevIdx].end).catch(() => {});
+						}
+					}
+				} else {
+					// No highlights — skip to prev segment
 					if (currentChunkAbort) { currentChunkAbort(); currentChunkAbort = undefined; }
 					if (abortTTS) { abortTTS(); abortTTS = undefined; }
 					sidebar.sendAudioStop();
-					walkthrough.setHighlightIndex(prevIdx);
-					if (walkthrough.getState().status === "playing") {
-						playSegmentHighlights(seg, walkthrough, sidebar, prevIdx).catch((err) => {
-							console.error("[code-explainer] Highlight loop error:", err);
-						});
-					}
+					walkthrough.prev();
 				}
 				break;
 			}

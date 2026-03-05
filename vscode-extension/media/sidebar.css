@@ -137,11 +137,17 @@ body {
 	height: 28px;
 	border-radius: 50%;
 	background: var(--vscode-button-secondaryBackground);
-	opacity: 0.7;
+	opacity: 0;
+	pointer-events: none;
 	transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
-.controls .highlight-btn:hover {
+.controls .highlight-btn.visible {
+	opacity: 0.7;
+	pointer-events: auto;
+}
+
+.controls .highlight-btn.visible:hover {
 	opacity: 1;
 	background: var(--vscode-button-secondaryHoverBackground);
 }

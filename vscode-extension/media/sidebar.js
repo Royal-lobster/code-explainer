@@ -294,12 +294,12 @@ function renderHighlightProgress() {
 	if (totalHighlights > 1) {
 		counter.textContent =
 			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
-		prevHighlightBtn.style.display = "";
-		nextHighlightBtn.style.display = "";
+		prevHighlightBtn.classList.add("visible");
+		nextHighlightBtn.classList.add("visible");
 	} else {
 		counter.textContent = `${idx + 1}/${state.segments.length}`;
-		prevHighlightBtn.style.display = "none";
-		nextHighlightBtn.style.display = "none";
+		prevHighlightBtn.classList.remove("visible");
+		nextHighlightBtn.classList.remove("visible");
 	}
 }
 
@@ -451,19 +451,24 @@ window.addEventListener("message", (event) => {
 			renderHighlightProgress();
 			break;
 
-		case "update":
+		case "update": {
+			const prevSegment = state.currentSegment;
 			state = {
 				title: msg.title,
 				segments: msg.segments,
 				currentSegment: msg.currentSegment,
 				status: msg.status,
 			};
-			currentHighlightIndex = 0;
-			totalHighlights = 0;
+			// Only reset highlight state when the segment actually changed
+			if (prevSegment !== msg.currentSegment) {
+				currentHighlightIndex = 0;
+				totalHighlights = 0;
+			}
 			awaitingHighlightAdvance = state.status === "playing";
 			render();
 			renderHighlightProgress();
 			break;
+		}
 
 		case "audio_chunk": {
 			const playBtn = document.getElementById("btn-play-pause");

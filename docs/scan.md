@@ -22,9 +22,14 @@ Return a structured result:
 - **Core files**: list of files with brief description of each
 - **Call chain**: what calls what (A -> B -> C)
 - **Walkthrough plan**: ordered list of segments, each as:
-  {file_absolute_path}:{startLine}-{endLine} -- {brief description} [{complexity}]
+  {file_absolute_path}:{start}-{end} -- {title} [{complexity}]
     Sub-highlights (2-5 per segment):
-      - {startLine}-{endLine} -- {brief description of this sub-range}
+      - {start}-{end} -- {ttsText: 1-2 sentence plain-text narration}
+
+  IMPORTANT — field names must match the sidebar API exactly:
+  - `start` / `end` (not startLine / endLine)
+  - `title` (not label or description)
+  - Sub-highlights use `start` / `end` / `ttsText`
 
   {complexity} is one of:
   - `[core]` — central logic. Explain thoroughly.

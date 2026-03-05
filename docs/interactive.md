@@ -2,6 +2,11 @@
 
 **If Autoplay was chosen, use `docs/autoplay.md` instead.**
 
+## 5-pre. Send plan to sidebar (if not already sent in step 3)
+
+If the sidebar is active and you haven't already sent `set_plan` in step 3, send it now.
+The sidebar needs the full plan before `goto` messages will work. See `docs/plan.md` step 3a for the `set_plan` JSON schema and send command.
+
 For each segment:
 
 ## 5a. Highlight in VS Code
@@ -15,7 +20,7 @@ Sidebar active (from step 0):
 
 Fallback (no sidebar):
 ```bash
-echo '{"file":"{absolute_filepath}","start":{startLine},"end":{endLine}}' > ~/.claude-highlight.json
+echo '{"file":"{absolute_filepath}","start":{start},"end":{end}}' > ~/.claude-highlight.json
 ```
 
 Always use absolute file paths.

@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { Segment } from "./types";
 
-interface WalkthroughFile {
+export interface WalkthroughFile {
 	title: string;
 	segments: Segment[];
 }
@@ -19,7 +19,8 @@ export class WalkthroughStorage {
 		return title
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-+|-+$/g, "");
+			.replace(/^-+|-+$/g, "")
+			|| "walkthrough";
 	}
 
 	/** Convert absolute `file` paths to relative (from workspace root). */

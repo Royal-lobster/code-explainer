@@ -171,7 +171,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		sidebar.sendAudioResume();
 
-		// Wait for the remaining buffered audio to finish
+		// Wait for the remaining buffered audio to finish.
+		// Order matters: sendAudioResume posts to webview (always async via iframe postMessage),
+		// so the playback_complete response will arrive after waitForPlaybackComplete installs its resolver.
 		sidebar.waitForPlaybackComplete().then(() => {
 			if (myGeneration !== highlightLoopGeneration) return;
 			if (walkthrough.getState().status !== "playing") return;
@@ -306,6 +308,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 
 		if (state.status === "stopped") {
+			hasSuspendedAudio = false;
 			clearHighlights();
 			restoreSmoothScrolling().catch(() => {});
 			vscode.commands.executeCommand('setContext', 'codeExplainer.walkthroughActive', false);

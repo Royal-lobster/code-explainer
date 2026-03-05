@@ -25,6 +25,8 @@ let activeSources = [];
 let volume = 0.8;
 let muted = false;
 let audioPlaying = false;
+/** True when audio was intentionally suspended via suspendAudio() (user pause). */
+let intentionallySuspended = false;
 let currentHighlightIndex = 0;
 let totalHighlights = 0;
 /** True when audio_end arrived but chunks are still pending (AudioContext suspended) */
@@ -40,7 +42,7 @@ function ensureAudioContext() {
 		gainNode.gain.value = muted ? 0 : volume;
 		gainNode.connect(audioCtx.destination);
 	}
-	if (audioCtx.state === "suspended") {
+	if (audioCtx.state === "suspended" && !intentionallySuspended) {
 		audioCtx.resume().then(() => {
 			// Flush any chunks that arrived while suspended
 			const chunks = pendingChunks.slice();
@@ -100,6 +102,7 @@ function playAudioChunk(base64Data, sampleRate) {
 }
 
 function stopAudio() {
+	intentionallySuspended = false;
 	for (const source of activeSources) {
 		// Clear onended BEFORE stopping to prevent stale playback_complete messages.
 		// Without this, wrapped onended callbacks (from waitForActiveSourcesToFinish)
@@ -118,6 +121,7 @@ function stopAudio() {
 /** Suspend AudioContext to freeze audio in place (pause mid-highlight). */
 function suspendAudio() {
 	if (audioCtx && audioCtx.state === "running") {
+		intentionallySuspended = true;
 		audioCtx.suspend();
 	}
 	// Don't clear sources or nextPlayTime — we want to resume from here
@@ -125,6 +129,7 @@ function suspendAudio() {
 
 /** Resume AudioContext and wait for remaining buffered audio to finish. */
 function resumeAudio() {
+	intentionallySuspended = false;
 	if (audioCtx && audioCtx.state === "suspended" && activeSources.length > 0) {
 		audioCtx.resume().then(() => {
 			waitForActiveSourcesToFinish();

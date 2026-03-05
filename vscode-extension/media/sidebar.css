@@ -4,11 +4,28 @@
 	box-sizing: border-box;
 }
 
+html, body {
+	height: 100%;
+	overflow: hidden;
+}
+
 body {
 	font-family: var(--vscode-font-family);
 	font-size: var(--vscode-font-size);
 	color: var(--vscode-foreground);
 	padding: 12px;
+}
+
+/* ── Active view layout ── */
+
+#active-view {
+	display: flex;
+	flex-direction: column;
+	height: calc(100vh - 24px); /* account for body padding */
+}
+
+.sticky-top {
+	flex-shrink: 0;
 }
 
 /* ── Idle view ── */
@@ -354,6 +371,12 @@ body {
 }
 
 /* ── Outline ── */
+
+.outline {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+}
 
 .outline h3 {
 	font-size: 0.9em;

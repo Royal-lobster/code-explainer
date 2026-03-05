@@ -130,72 +130,74 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 	</div>
 
 	<div id="active-view" style="display:none;">
-		<div class="header">
-			<h2 id="walkthrough-title"></h2>
-		</div>
+		<div class="sticky-top">
+			<div class="header">
+				<h2 id="walkthrough-title"></h2>
+			</div>
 
-		<div class="now-playing">
-			<div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
-			<span id="segment-counter" class="counter"></span>
-			<span id="segment-title" class="seg-title"></span>
-			<a id="segment-location" class="seg-location" href="#"></a>
-		</div>
+			<div class="now-playing">
+				<div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+				<span id="segment-counter" class="counter"></span>
+				<span id="segment-title" class="seg-title"></span>
+				<a id="segment-location" class="seg-location" href="#"></a>
+			</div>
 
-		<div class="controls">
-			<button id="btn-prev" title="Previous segment">
-				<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h2v10H3V3zm10 0L7 8l6 5V3z"/></svg>
-			</button>
-			<button id="btn-prev-highlight" class="highlight-btn" title="Previous sub-segment">
-				<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M10 2L4 8l6 6V2z"/></svg>
-			</button>
-			<button id="btn-play-pause" class="play-btn" title="Play/Pause">
-				<svg class="icon-play" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
-				<svg class="icon-pause" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M3 2h4v12H3V2zm6 0h4v12H9V2z"/></svg>
-			</button>
-			<button id="btn-next-highlight" class="highlight-btn" title="Next sub-segment">
-				<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2l6 6-6 6V2z"/></svg>
-			</button>
-			<button id="btn-next" title="Next segment">
-				<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 3h2v10h-2V3zM3 3l6 5-6 5V3z"/></svg>
-			</button>
-		</div>
+			<div class="controls">
+				<button id="btn-prev" title="Previous segment">
+					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h2v10H3V3zm10 0L7 8l6 5V3z"/></svg>
+				</button>
+				<button id="btn-prev-highlight" class="highlight-btn" title="Previous sub-segment">
+					<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M10 2L4 8l6 6V2z"/></svg>
+				</button>
+				<button id="btn-play-pause" class="play-btn" title="Play/Pause">
+					<svg class="icon-play" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
+					<svg class="icon-pause" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="display:none"><path d="M3 2h4v12H3V2zm6 0h4v12H9V2z"/></svg>
+				</button>
+				<button id="btn-next-highlight" class="highlight-btn" title="Next sub-segment">
+					<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2l6 6-6 6V2z"/></svg>
+				</button>
+				<button id="btn-next" title="Next segment">
+					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11 3h2v10h-2V3zM3 3l6 5-6 5V3z"/></svg>
+				</button>
+			</div>
 
-		<div class="audio-controls">
-			<label class="control-row">
-				<span class="label">Vol</span>
-				<input type="range" id="volume-slider" min="0" max="100" value="80">
-				<button id="btn-mute" title="Mute">&#128266;</button>
-			</label>
-			<label class="control-row">
-				<span class="label">Speed</span>
-				<div class="speed-buttons" id="speed-buttons">
-					<button data-speed="1" class="active">1x</button>
-					<button data-speed="1.25">1.25x</button>
-					<button data-speed="1.5">1.5x</button>
-					<button data-speed="2">2x</button>
-				</div>
-			</label>
-			<label class="control-row">
-				<span class="label">Voice</span>
-				<select id="voice-select">
-					<option value="af_heart">Heart (F)</option>
-					<option value="af_bella">Bella (F)</option>
-					<option value="af_sarah">Sarah (F)</option>
-					<option value="am_adam">Adam (M)</option>
-					<option value="am_michael">Michael (M)</option>
-					<option value="bf_emma">Emma (BF)</option>
-					<option value="bm_george">George (BM)</option>
-				</select>
-			</label>
-		</div>
+			<div class="audio-controls">
+				<label class="control-row">
+					<span class="label">Vol</span>
+					<input type="range" id="volume-slider" min="0" max="100" value="80">
+					<button id="btn-mute" title="Mute">&#128266;</button>
+				</label>
+				<label class="control-row">
+					<span class="label">Speed</span>
+					<div class="speed-buttons" id="speed-buttons">
+						<button data-speed="1" class="active">1x</button>
+						<button data-speed="1.25">1.25x</button>
+						<button data-speed="1.5">1.5x</button>
+						<button data-speed="2">2x</button>
+					</div>
+				</label>
+				<label class="control-row">
+					<span class="label">Voice</span>
+					<select id="voice-select">
+						<option value="af_heart">Heart (F)</option>
+						<option value="af_bella">Bella (F)</option>
+						<option value="af_sarah">Sarah (F)</option>
+						<option value="am_adam">Adam (M)</option>
+						<option value="am_michael">Michael (M)</option>
+						<option value="bf_emma">Emma (BF)</option>
+						<option value="bm_george">George (BM)</option>
+					</select>
+				</label>
+			</div>
 
-		<div class="explanation-box">
-			<div id="explanation-text" class="explanation-text"></div>
-		</div>
+			<div class="explanation-box">
+				<div id="explanation-text" class="explanation-text"></div>
+			</div>
 
-		<div class="agent-hint">
-			<span class="agent-hint-icon">&#x1F4AC;</span>
-			Have questions? Ask your coding agent!
+			<div class="agent-hint">
+				<span class="agent-hint-icon">&#x1F4AC;</span>
+				Have questions? Ask your coding agent!
+			</div>
 		</div>
 
 		<div class="outline">

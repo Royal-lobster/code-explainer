@@ -234,8 +234,6 @@ function render() {
 	const idx = state.segments.findIndex((s) => s.id === state.currentSegment);
 
 	if (seg) {
-		document.getElementById("segment-counter").textContent =
-			`${idx + 1}/${state.segments.length}`;
 		document.getElementById("segment-title").textContent = seg.title;
 
 		const loc = document.getElementById("segment-location");
@@ -266,13 +264,6 @@ function render() {
 		playBtn.classList.remove("pulse");
 	}
 
-	// Progress bar
-	const progressFill = document.getElementById("progress-fill");
-	if (progressFill && state.segments.length > 0) {
-		const pct = ((idx + 1) / state.segments.length) * 100;
-		progressFill.style.width = `${pct}%`;
-	}
-
 	// Explanation with fade transition
 	if (seg) {
 		const explEl = document.getElementById("explanation-text");
@@ -287,17 +278,45 @@ function render() {
 	renderOutline(idx);
 }
 
+function computeGlobalProgress() {
+	if (state.segments.length === 0) {
+		return { current: 0, total: 0 };
+	}
+	let totalGlobalHighlights = 0;
+	let completedHighlights = 0;
+	const currentIdx = state.segments.findIndex(s => s.id === state.currentSegment);
+
+	for (let i = 0; i < state.segments.length; i++) {
+		const seg = state.segments[i];
+		const segHighlights = (seg.highlights && seg.highlights.length > 0) ? seg.highlights.length : 1;
+		totalGlobalHighlights += segHighlights;
+
+		if (i < currentIdx) {
+			completedHighlights += segHighlights;
+		} else if (i === currentIdx) {
+			completedHighlights += currentHighlightIndex;
+		}
+	}
+
+	return { current: completedHighlights + 1, total: totalGlobalHighlights };
+}
+
 function renderHighlightProgress() {
 	const counter = document.getElementById("segment-counter");
 	if (!counter) return;
 
-	const idx = state.segments.findIndex((s) => s.id === state.currentSegment);
-
-	if (totalHighlights > 1) {
-		counter.textContent =
-			`${idx + 1}/${state.segments.length} · ${currentHighlightIndex + 1}/${totalHighlights}`;
+	const { current, total } = computeGlobalProgress();
+	if (total > 0) {
+		counter.textContent = `${current}/${total}`;
 	} else {
-		counter.textContent = `${idx + 1}/${state.segments.length}`;
+		counter.textContent = "";
+	}
+
+	// Update progress bar
+	const progressFill = document.getElementById("progress-fill");
+	if (progressFill && total > 0) {
+		const pct = (current / total) * 100;
+		progressFill.style.width = `${pct}%`;
 	}
 
 	// Update nav button icons based on current highlight count

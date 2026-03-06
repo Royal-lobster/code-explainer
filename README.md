@@ -21,7 +21,7 @@
 - 🔊 **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon via mlx-audio
 - 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - 🧠 **Adaptive Depth** — Overview or Deep Dive explanations based on your familiarity
-- 📋 **Plan-First** — Scans the codebase, presents a walkthrough plan, and lets you reorder before starting
+- 📋 **Plan-First** — Scout finds files, planner builds narrative order, parallel segment agents generate highlights — outline visible immediately, segments stream in as they finish
 - 💾 **Save & Share** — Save walkthroughs to `.walkthrough.json` files, replay later or share with teammates via the repo
 - ⌨️ **Keyboard Shortcuts** — Full keybinding support for hands-free navigation
 
@@ -119,14 +119,22 @@ How does the WebSocket gateway handle events?
 ```
 1. 💬 You ask to explain a feature
 2. 🎯 Asks your depth preference (Overview / Deep Dive) and delivery mode
-3. 🔍 Dispatches a lightweight sub-agent to scan the codebase
-4. 📋 Builds an ordered walkthrough plan with complexity tags ([core], [wiring], [supporting])
-5. ✅ You approve, reorder, or adjust the plan
-6. 🔄 Executes the walkthrough based on your chosen mode:
-   Walkthrough — sends the full plan to the sidebar, which drives playback with TTS
-   Read        — highlights code segment-by-segment, explains in terminal, waits for input
-   Podcast     — generates a single audio file of the entire walkthrough
-7. 📝 Summarizes key takeaways
+3. 🔍 Scout sub-agent maps the codebase — discovers relevant files and call chain
+
+Overview path (fast):
+4. 📋 Single agent builds plan + highlights in one pass → sends set_plan
+
+Deep Dive path (thorough):
+4. 🗺️ Planner builds narrative order + transition objects
+5. ⚡ Parallel segment agents generate dense highlights
+   Waits for all agents to finish, then sends full set_plan to sidebar
+
+6. ✅ Plan in sidebar + chat — approve, reorder, or skip before playback starts
+7. 🔄 Walkthrough runs based on your chosen mode:
+   Walkthrough — sidebar drives playback automatically with TTS narration
+   Read        — step through explanations in terminal, highlights code as you go
+   Podcast     — renders a single audio file of the entire walkthrough
+8. 📝 Summarizes key takeaways
 ```
 
 ## 🎬 Modes
@@ -264,10 +272,11 @@ code-explainer/
 ├── 📂 docs/
 │   ├── 📖 setup.md                  # Setup reference
 │   ├── 🗑️ uninstall.md              # Uninstall guide
-│   ├── 🎯 assess.md                 # Preference gathering
-│   ├── 🔍 scan.md                   # Codebase scanning via sub-agent
-│   ├── 📋 plan.md                   # Walkthrough plan generation
-│   ├── 🎥 walkthrough.md            # Walkthrough mode with sidebar + TTS
+│   ├── 🎯 assess.md                 # Preference gathering (depth + delivery mode)
+│   ├── 🔍 scan.md                   # Scout sub-agent (file discovery + call chain)
+│   ├── 📋 plan.md                   # Planner sub-agent (narrative + transition objects)
+│   ├── ⚡ segments.md               # Parallel segment agents (highlight generation)
+│   ├── 🎥 walkthrough.md            # Walkthrough mode (sidebar + TTS)
 │   ├── 📝 read.md                   # Read mode (text in terminal)
 │   ├── 🎙️ podcast.md               # Podcast mode (single audio file)
 │   └── 🗣️ tts.md                   # TTS reference (voices, speeds)

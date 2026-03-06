@@ -24,7 +24,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 step=0
-total_steps=6
+total_steps=7
 
 header() {
     echo ""
@@ -116,7 +116,65 @@ else
     warn "uv not found — using pip (slower). Install uv for faster setup: brew install uv"
 fi
 
-# ── Step 2: Create Python virtual environment ───────────────────────────────
+# ── Step 2: Configure AI models ─────────────────────────────────────────────
+header "Configure AI models"
+
+SKILL_FILE="$SCRIPT_DIR/SKILL.md"
+
+# Read current values from SKILL.md
+CURRENT_LARGE=$(python3 -c "import re; m=re.search(r'\| \`LARGE\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'opus')" 2>/dev/null || echo "opus")
+CURRENT_MEDIUM=$(python3 -c "import re; m=re.search(r'\| \`MEDIUM\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'sonnet')" 2>/dev/null || echo "sonnet")
+CURRENT_SMALL=$(python3 -c "import re; m=re.search(r'\| \`SMALL\` \| \`([^\`]+)\`', open('$SKILL_FILE').read()); print(m.group(1) if m else 'haiku')" 2>/dev/null || echo "haiku")
+
+echo ""
+echo -e "  Default model configuration:"
+echo -e "    ${BOLD}LARGE${NC}  — planner (best reasoning)    : ${BLUE}$CURRENT_LARGE${NC}"
+echo -e "    ${BOLD}MEDIUM${NC} — segment agents (deep reading): ${BLUE}$CURRENT_MEDIUM${NC}"
+echo -e "    ${BOLD}SMALL${NC}  — scout + overview (fast)      : ${BLUE}$CURRENT_SMALL${NC}"
+echo ""
+echo -e "  Use any model name your agent supports (e.g. ${BLUE}gpt-4o${NC}, ${BLUE}gemini-2.5-pro${NC})."
+echo -ne "  ${BOLD}Keep these defaults?${NC} [Y/n] "
+read -r KEEP_MODELS </dev/tty
+
+if [[ "$KEEP_MODELS" =~ ^[Nn] ]]; then
+    echo ""
+    echo -ne "  LARGE  [$CURRENT_LARGE]: "
+    read -r NEW_LARGE </dev/tty
+    echo -ne "  MEDIUM [$CURRENT_MEDIUM]: "
+    read -r NEW_MEDIUM </dev/tty
+    echo -ne "  SMALL  [$CURRENT_SMALL]: "
+    read -r NEW_SMALL </dev/tty
+
+    # Fall back to current value if user pressed Enter
+    NEW_LARGE="${NEW_LARGE:-$CURRENT_LARGE}"
+    NEW_MEDIUM="${NEW_MEDIUM:-$CURRENT_MEDIUM}"
+    NEW_SMALL="${NEW_SMALL:-$CURRENT_SMALL}"
+
+    # Update SKILL.md with chosen models (sanitize input to prevent markdown corruption)
+    python3 - "$SKILL_FILE" "$NEW_LARGE" "$NEW_MEDIUM" "$NEW_SMALL" << 'PYEOF'
+import re, sys
+
+def sanitize(val):
+    """Strip characters that would corrupt the markdown table."""
+    return val.replace('`', '').replace('|', '').replace('\n', '').strip()
+
+path, large, medium, small = sys.argv[1], sanitize(sys.argv[2]), sanitize(sys.argv[3]), sanitize(sys.argv[4])
+content = open(path).read()
+content = re.sub(r'(\| `LARGE` \| )`[^`]+`', r'\1`' + large + '`', content)
+content = re.sub(r'(\| `MEDIUM` \| )`[^`]+`', r'\1`' + medium + '`', content)
+content = re.sub(r'(\| `SMALL` \| )`[^`]+`', r'\1`' + small + '`', content)
+open(path, 'w').write(content)
+PYEOF
+
+    ok "Models saved to SKILL.md"
+    echo -e "    LARGE  → ${GREEN}$NEW_LARGE${NC}"
+    echo -e "    MEDIUM → ${GREEN}$NEW_MEDIUM${NC}"
+    echo -e "    SMALL  → ${GREEN}$NEW_SMALL${NC}"
+else
+    ok "Using default models"
+fi
+
+# ── Step 3: Create Python virtual environment ───────────────────────────────
 header "Setting up Python environment for TTS"
 
 if [[ -d "$VENV_DIR" ]]; then

@@ -64,6 +64,37 @@ function processHighlightFile(): void {
 	});
 }
 
+// ── Continuous TTS plan ──
+
+interface SegmentTTSPlan {
+	fullText: string;
+	/** chunkBoundaries[i] = index of first chunk belonging to the i-th spoken highlight */
+	chunkBoundaries: number[];
+	/** Maps each entry in chunkBoundaries back to the original highlight index (handles gaps from empty ttsText) */
+	highlightIndices: number[];
+	totalChunks: number;
+}
+
+function buildSegmentTTSPlan(highlights: Highlight[], startFrom = 0): SegmentTTSPlan {
+	const SPLIT_RE = /(?<=[.!?])\s+/;
+	const chunkBoundaries: number[] = [];
+	const highlightIndices: number[] = [];
+	const textParts: string[] = [];
+	let totalChunks = 0;
+
+	for (let i = startFrom; i < highlights.length; i++) {
+		let text = (highlights[i].ttsText || "").trim();
+		if (!text) continue;
+		if (!/[.!?]$/.test(text)) text += ".";
+		chunkBoundaries.push(totalChunks);
+		highlightIndices.push(i);
+		totalChunks += text.split(SPLIT_RE).filter(Boolean).length;
+		textParts.push(text);
+	}
+
+	return { fullText: textParts.join(" "), chunkBoundaries, highlightIndices, totalChunks };
+}
+
 // ── Main activation ──
 
 function playHighlightChunk(
@@ -165,6 +196,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	/** Stop audio and reset suspended flag. Use this instead of sidebar.sendAudioStop() directly. */
 	function fullAudioStop(): void {
 		sidebar.sendAudioStop();
+		sidebar.setChunkPlayedCallback(undefined);
 		hasSuspendedAudio = false;
 	}
 
@@ -243,6 +275,74 @@ export function activate(context: vscode.ExtensionContext): void {
 		await highlightSegmentRange(segment.file, segment.start, segment.end).catch(() => {});
 		sb.updateState(wt.getState());
 
+		// ── Continuous TTS path: one call per segment ──
+		const hasTTS = isTTSAvailable() && highlights.some((h) => h.ttsText);
+		if (hasTTS) {
+			const plan = buildSegmentTTSPlan(highlights, startFromHighlight);
+			if (plan.fullText && plan.chunkBoundaries.length > 0) {
+				// Show first highlight immediately
+				const firstHighlightIdx = plan.highlightIndices[0] ?? startFromHighlight;
+				wt.setHighlightIndex(firstHighlightIdx);
+				sb.sendHighlightAdvance(firstHighlightIdx, highlights.length, highlights[firstHighlightIdx].explanation);
+				await highlightSubRange(segment.file, highlights[firstHighlightIdx].start, highlights[firstHighlightIdx].end, highlights).catch(() => {});
+
+				// Track played chunks (from webview onended) to advance pointer at playback speed
+				let playedChunks = 0;
+				let pointerOffset = 0;
+
+				sb.setChunkPlayedCallback(() => {
+					if (myGeneration !== highlightLoopGeneration) return;
+					playedChunks++;
+
+					const nextPointer = pointerOffset + 1;
+					if (
+						nextPointer < plan.chunkBoundaries.length &&
+						playedChunks >= plan.chunkBoundaries[nextPointer]
+					) {
+						pointerOffset = nextPointer;
+						const highlightIdx = plan.highlightIndices[nextPointer];
+						if (highlightIdx !== undefined && highlightIdx < highlights.length) {
+							wt.setHighlightIndex(highlightIdx);
+							sb.sendHighlightAdvance(highlightIdx, highlights.length, highlights[highlightIdx].explanation);
+							highlightSubRange(segment.file, highlights[highlightIdx].start, highlights[highlightIdx].end, highlights).catch(() => {});
+						}
+					}
+				});
+
+				const playbackDone = sb.waitForPlaybackComplete();
+
+				const abortTTS = streamTTS(
+					plan.fullText,
+					{ voice: ttsVoice, speed: ttsSpeed },
+					(base64, sampleRate) => {
+						if (myGeneration !== highlightLoopGeneration) return;
+						sb.sendAudioChunk(base64, sampleRate);
+					},
+					() => {
+						if (myGeneration !== highlightLoopGeneration) return;
+						sb.sendAudioEnd();
+					},
+					(err) => {
+						console.error("[code-explainer] TTS error:", err);
+					},
+				);
+
+				currentChunkAbort = abortTTS;
+				await playbackDone;
+				currentChunkAbort = undefined;
+				sb.setChunkPlayedCallback(undefined);
+
+				if (myGeneration !== highlightLoopGeneration) return;
+
+				// All highlights done — auto-advance to next segment
+				if (wt.getState().status === "playing") {
+					wt.next();
+				}
+				return;
+			}
+		}
+
+		// ── Fallback: per-highlight TTS (no TTS available or no ttsText) ──
 		for (let i = startFromHighlight; i < highlights.length; i++) {
 			if (myGeneration !== highlightLoopGeneration) return;
 

@@ -96,6 +96,7 @@ function playAudioChunk(base64Data, sampleRate) {
 	source.onended = () => {
 		const idx = activeSources.indexOf(source);
 		if (idx !== -1) activeSources.splice(idx, 1);
+		vscode.postMessage({ type: "chunk_played" });
 	};
 
 	audioPlaying = true;

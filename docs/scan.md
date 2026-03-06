@@ -1,16 +1,16 @@
-# Step 2: Scan the Codebase
+# Step 1: Scout the Codebase
 
-Dispatch a haiku sub-agent to scan. This saves main context for the walkthrough.
+Dispatch a **`SMALL`** sub-agent to discover relevant files and map the call chain. The scout does not generate highlights — it only maps the territory.
 
 Agent tool parameters:
 - `subagent_type`: `Explore`
-- `model`: `haiku`
-- `description`: `Scan codebase for {feature}`
+- `model`: `SMALL` ← replace with model from SKILL.md
+- `description`: `Scout codebase for {feature}`
 
 ## Prompt template
 
 ```
-Scan this codebase to find all files relevant to "{feature}".
+Scout this codebase to find all files relevant to "{feature}".
 
 1. Grep for: {feature name}, key class names, key function names
 2. Glob for file patterns in relevant directories
@@ -18,35 +18,29 @@ Scan this codebase to find all files relevant to "{feature}".
 4. Follow imports to discover related files
 
 Return a structured result:
-- **Entry point**: the file/function where the feature starts
-- **Core files**: list of files with brief description of each
-- **Call chain**: what calls what (A -> B -> C)
-- **Walkthrough plan**: ordered list of segments, each as:
-  {file_absolute_path}:{start}-{end} -- {title} [{complexity}]
-    Sub-highlights (4-10 per segment, one concept each):
-      - {start}-{end} -- {ttsText: 1-2 sentence plain-text narration} [explanation: optional markdown explanation]
 
-  IMPORTANT — field names must match the sidebar API exactly:
-  - `start` / `end` (not startLine / endLine)
-  - `title` (not label or description)
-  - `highlights`: required array of sub-ranges (minimum 1), each with `start`, `end`, `ttsText`
+**Entry point**: the file/function where the feature starts
 
-  {complexity} is one of:
-  - `[core]` — central logic. Explain thoroughly.
+**Call chain**: what calls what (A → B → C → D)
+
+**Files** (one per relevant file, in call-flow order):
+  {file_absolute_path}:{start}-{end} [{complexity}]
+  Role: what this file does in the feature
+  Receives: what arrives from the previous file (or "entry point")
+  Produces: what it hands off to the next file
+  Notable: any non-obvious design decisions, patterns, or gotchas
+
+{complexity} is one of:
+  - `[core]` — central logic. Needs thorough explanation.
   - `[wiring]` — boilerplate, config, DI. Breeze through.
   - `[supporting]` — helpers, utilities, types. Explain briefly.
 
-  Sub-highlights: one concept per highlight, 1-8 lines each.
-  Split multi-operation blocks into individual highlights.
-  For constructors/function calls with multiple args, highlight each arg separately.
-  For sequential operations (e.g., 3 DB updates in a row), one highlight per update.
-
 Depth level: {overview|deep-dive}
-Segment sizing:
-- Overview: 40-80 lines per segment, 4-8 segments total
-- Deep Dive: 15-40 lines per segment, 8-15 segments total
+File count targets:
+- Overview: 4-8 files
+- Deep Dive: 8-15 files
 
 Ordering: entry point first, follow data/call flow, group related logic, end with utilities/types/config.
 ```
 
-Include the feature name, any files the user mentioned, and the depth level from step 1. If the user pointed to a specific file, tell the sub-agent to start there.
+Include the feature name, any files the user mentioned, and the depth level from step 0. If the user pointed to a specific file, tell the sub-agent to start there.

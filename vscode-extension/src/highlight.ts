@@ -139,8 +139,22 @@ export async function highlightSubRange(
 		preserveFocus: false,
 	});
 
-	// Dim outside segment
-	const dimRanges = buildOuterDimRanges(doc, currentSegmentStart, currentSegmentEnd);
+	// Expand effective segment range to encompass all highlights so that
+	// highlights outside [segment.start, segment.end] aren't outer-dimmed.
+	let effStart = currentSegmentStart;
+	let effEnd = currentSegmentEnd;
+	if (allHighlights) {
+		for (const hl of allHighlights) {
+			effStart = Math.min(effStart, Math.max(0, hl.start - 1));
+			effEnd = Math.max(effEnd, Math.max(0, hl.end - 1));
+		}
+	}
+	// Also ensure active range is included
+	effStart = Math.min(effStart, zeroStart);
+	effEnd = Math.max(effEnd, zeroEnd);
+
+	// Dim outside effective segment range
+	const dimRanges = buildOuterDimRanges(doc, effStart, effEnd);
 	editor.setDecorations(dimDecoration, dimRanges);
 
 	// Compute gap vs non-active highlight ranges when we have highlight info
@@ -155,7 +169,7 @@ export async function highlightSubRange(
 		const gapRanges: vscode.Range[] = [];
 		const nonActiveHighlightRanges: vscode.Range[] = [];
 
-		for (let i = currentSegmentStart; i <= currentSegmentEnd; i++) {
+		for (let i = effStart; i <= effEnd; i++) {
 			if (i >= zeroStart && i <= zeroEnd) continue; // active highlight
 			const line = doc.lineAt(i);
 			if (highlightedLines.has(i)) {
@@ -169,7 +183,7 @@ export async function highlightSubRange(
 		editor.setDecorations(gapDecoration, gapRanges);
 	} else {
 		// Fallback: no highlight info, use existing behavior
-		const segDimRanges = buildSegmentDimRanges(doc, currentSegmentStart, currentSegmentEnd, zeroStart, zeroEnd);
+		const segDimRanges = buildSegmentDimRanges(doc, effStart, effEnd, zeroStart, zeroEnd);
 		editor.setDecorations(segmentDimDecoration, segDimRanges);
 		editor.setDecorations(gapDecoration, []);
 	}

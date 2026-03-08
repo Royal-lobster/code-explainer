@@ -153,7 +153,7 @@ function resumeAudio() {
  * only the first call wires the wrapper; subsequent calls are no-ops.
  */
 function waitForActiveSourcesToFinish() {
-	if (playbackCompleteWired) return;
+	if (playbackCompleteWired || intentionallySuspended) return;
 	playbackCompleteWired = true;
 	if (activeSources.length === 0) {
 		audioPlaying = false;

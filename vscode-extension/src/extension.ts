@@ -200,35 +200,15 @@ export function activate(context: vscode.ExtensionContext): void {
 		hasSuspendedAudio = false;
 	}
 
-	/** Resume from suspended audio — plays remaining buffered audio, then continues to next highlight. */
+	/**
+	 * Resume from suspended audio — just unpause the AudioContext.
+	 * The original playSegmentHighlights loop is still alive (paused at `await playbackDone`)
+	 * with its chunkPlayedCallback intact, so highlights will continue advancing
+	 * as the buffered audio plays out.
+	 */
 	function resumeFromSuspended(): void {
 		hasSuspendedAudio = false;
-		const seg = walkthrough.getCurrentSegment();
-		if (!seg) return;
-		highlightLoopGeneration++;
-		const myGeneration = highlightLoopGeneration;
-		const highlightIdx = walkthrough.getHighlightIndex();
-
 		sidebar.sendAudioResume();
-
-		// Wait for the remaining buffered audio to finish.
-		// Order matters: sendAudioResume posts to webview (always async via iframe postMessage),
-		// so the playback_complete response will arrive after waitForPlaybackComplete installs its resolver.
-		sidebar.waitForPlaybackComplete().then(() => {
-			if (myGeneration !== highlightLoopGeneration) return;
-			if (walkthrough.getState().status !== "playing") return;
-
-			// Continue from the next highlight
-			const nextIdx = highlightIdx + 1;
-			if (nextIdx < seg.highlights.length) {
-				playSegmentHighlights(seg, walkthrough, sidebar, nextIdx).catch((err) => {
-					console.error("[code-explainer] Highlight loop error:", err);
-				});
-			} else {
-				// All highlights done — auto-advance to next segment
-				walkthrough.next();
-			}
-		});
 	}
 
 	/** Pre-warm the TTS server then resume playback from a specific highlight index. */
@@ -406,12 +386,14 @@ export function activate(context: vscode.ExtensionContext): void {
 				currentChunkAbort();
 				currentChunkAbort = undefined;
 			}
-			highlightLoopGeneration++;
-			// On pause, suspend audio (freeze in place) for exact-position resume.
-			// On "stopped" (natural end), let webview audio drain naturally.
 			if (state.status === "paused") {
+				// Suspend audio but keep the highlight loop alive — don't
+				// increment highlightLoopGeneration so the chunkPlayedCallback
+				// remains valid and can advance highlights when audio resumes.
 				sidebar.sendAudioSuspend();
 				hasSuspendedAudio = true;
+			} else {
+				highlightLoopGeneration++;
 			}
 		}
 

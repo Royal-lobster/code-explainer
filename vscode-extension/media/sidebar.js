@@ -31,6 +31,8 @@ let currentHighlightIndex = 0;
 let totalHighlights = 0;
 /** True when audio_end arrived but chunks are still pending (AudioContext suspended) */
 let deferredPlaybackComplete = false;
+/** Guard: true while waitForActiveSourcesToFinish has a pending wrapper or sent playback_complete */
+let playbackCompleteWired = false;
 
 /** @type {{base64: string, sampleRate: number}[]} */
 let pendingChunks = [];
@@ -117,6 +119,7 @@ function stopAudio() {
 	nextPlayTime = 0;
 	audioPlaying = false;
 	deferredPlaybackComplete = false;
+	playbackCompleteWired = false;
 }
 
 /** Suspend AudioContext to freeze audio in place (pause mid-highlight). */
@@ -131,7 +134,9 @@ function suspendAudio() {
 /** Resume AudioContext and wait for remaining buffered audio to finish. */
 function resumeAudio() {
 	intentionallySuspended = false;
-	if (audioCtx && audioCtx.state === "suspended" && activeSources.length > 0) {
+	if (audioCtx && audioCtx.state === "suspended") {
+		// Always resume the AudioContext so subsequent playAudioChunk() calls
+		// don't silently push to pendingChunks instead of playing.
 		audioCtx.resume().then(() => {
 			waitForActiveSourcesToFinish();
 		});
@@ -144,10 +149,15 @@ function resumeAudio() {
 /**
  * Wait for all active audio sources to finish, then send playback_complete.
  * If no sources are active (already drained), sends immediately.
+ * Idempotent: safe to call multiple times (onAudioEnd + resumeAudio) —
+ * only the first call wires the wrapper; subsequent calls are no-ops.
  */
 function waitForActiveSourcesToFinish() {
+	if (playbackCompleteWired || intentionallySuspended) return;
+	playbackCompleteWired = true;
 	if (activeSources.length === 0) {
 		audioPlaying = false;
+		playbackCompleteWired = false;
 		vscode.postMessage({ type: "playback_complete" });
 		return;
 	}
@@ -156,6 +166,7 @@ function waitForActiveSourcesToFinish() {
 	lastSource.onended = (e) => {
 		if (originalOnEnded) originalOnEnded.call(lastSource, e);
 		audioPlaying = false;
+		playbackCompleteWired = false;
 		vscode.postMessage({ type: "playback_complete" });
 	};
 }

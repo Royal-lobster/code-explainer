@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="docs/cover.png" alt="Code Explainer cover" width="100%" />
+</p>
+
+<p align="center">
   <img src="vscode-extension/media/icon.png" width="120" height="120" alt="Code Explainer icon" />
 </p>
 

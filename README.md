@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="docs/cover.png" alt="Code Explainer cover" width="100%" />
-</p>
-
-<p align="center">
   <img src="vscode-extension/media/icon.png" width="120" height="120" alt="Code Explainer icon" />
 </p>
 
@@ -14,6 +10,10 @@
 
 <p align="center">
   A coding agent skill that scans your codebase, builds a walkthrough plan, and explains code segment-by-segment — highlighting lines in VS Code / Cursor with a dedicated sidebar panel and narrating with natural-sounding local TTS. Works with Claude Code, Codex, OpenCode, Kilo Code, Amp, and more.
+</p>
+
+<p align="center">
+  <img src="docs/cover.png" alt="Code Explainer cover" width="100%" />
 </p>
 
 ---

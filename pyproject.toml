@@ -30,6 +30,8 @@ addopts = "-m 'not real_tts'"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# Docs contain illustrative code blocks that ruff would otherwise reformat
+extend-exclude = ["docs"]
 
 
 [tool.ruff.lint]

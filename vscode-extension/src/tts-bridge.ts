@@ -1,12 +1,14 @@
 import * as net from "net";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as cp from "child_process";
+import { Endpoint, readEndpoint, removeEndpoint } from "./tts/endpoint";
+import { systemPython, venvPython } from "./tts/paths";
 
-const SOCKET_PATH = "/tmp/tts-server.sock";
-const PID_FILE = "/tmp/tts-server.pid";
 const SAMPLE_RATE = 24000;
-const SERVER_START_TIMEOUT_MS = 30_000;
+const SERVER_START_TIMEOUT_MS = 120_000;
+const PING_TIMEOUT_MS = 2000;
 
 export interface TTSOptions {
 	voice: string;
@@ -14,56 +16,37 @@ export interface TTSOptions {
 }
 
 /**
- * Check if the TTS server process is alive by verifying the PID file.
+ * Verify a server is alive at `ep` and accepts our token.
+ * @param ep - Endpoint read from the endpoint file.
+ * @returns Resolves true only if the server answered.
  */
-function isServerProcessAlive(): boolean {
-	try {
-		const pid = parseInt(fs.readFileSync(PID_FILE, "utf-8").trim(), 10);
-		process.kill(pid, 0); // signal 0 = check alive
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Remove stale socket and PID files left by a dead server.
- */
-function cleanupStaleFiles(): void {
-	for (const p of [SOCKET_PATH, PID_FILE]) {
-		try {
-			fs.unlinkSync(p);
-		} catch {}
-	}
-}
-
-/**
- * Ping the server over the socket to verify it's responsive.
- * Resolves true if alive, false otherwise.
- */
-function pingServer(): Promise<boolean> {
+function pingServer(ep: Endpoint): Promise<boolean> {
 	return new Promise((resolve) => {
-		const conn = net.createConnection(SOCKET_PATH);
-		const timeout = setTimeout(() => {
-			conn.destroy();
-			resolve(false);
-		}, 2000);
-
-		conn.on("connect", () => {
-			conn.end(JSON.stringify({ ping: true }), "utf-8");
-		});
-
-		conn.on("data", () => {
+		const conn = net.createConnection({ host: ep.host, port: ep.port });
+		const finish = (alive: boolean) => {
 			clearTimeout(timeout);
 			conn.destroy();
-			resolve(true);
-		});
-
-		conn.on("error", () => {
-			clearTimeout(timeout);
-			resolve(false);
-		});
+			resolve(alive);
+		};
+		const timeout = setTimeout(() => finish(false), PING_TIMEOUT_MS);
+		conn.on("connect", () => conn.end(JSON.stringify({ token: ep.token, ping: true }), "utf-8"));
+		conn.on("data", () => finish(true));
+		conn.on("error", () => finish(false));
+		conn.on("close", () => finish(false));
 	});
+}
+
+/**
+ * Return the running server's endpoint, cleaning up a stale file if found.
+ * @returns The live endpoint, or undefined.
+ */
+async function liveEndpoint(): Promise<Endpoint | undefined> {
+	const ep = readEndpoint();
+	if (!ep) return undefined;
+	if (await pingServer(ep)) return ep;
+	console.log("[tts-bridge] Stale endpoint detected, cleaning up...");
+	removeEndpoint(ep.pid);
+	return undefined;
 }
 
 let workspaceRoot: string | undefined;
@@ -71,25 +54,26 @@ let workspaceRoot: string | undefined;
 /**
  * Set the workspace root so we can find the TTS server script and venv Python.
  * Call this from extension.ts during activation.
+ * @param root - Workspace folder path.
  */
 export function setWorkspaceRoot(root: string): void {
 	workspaceRoot = root;
 }
 
-/** Known locations to search for the code-explainer project root. */
+/**
+ * Known locations of the code-explainer project root.
+ * @returns Candidate directories, most specific first.
+ */
 function getProjectRootCandidates(): string[] {
 	const candidates: string[] = [];
 	if (workspaceRoot) candidates.push(workspaceRoot);
-	const home = process.env.HOME || "";
-	if (home) {
-		// Skills directory (installed via claude skill)
-		candidates.push(path.join(home, ".claude", "skills", "explainer"));
-	}
+	candidates.push(path.join(os.homedir(), ".claude", "skills", "explainer"));
 	return candidates;
 }
 
 /**
  * Resolve the path to the TTS server script.
+ * @returns The script path, or undefined if TTS is not installed.
  */
 function getServerScript(): string | undefined {
 	for (const root of getProjectRootCandidates()) {
@@ -100,70 +84,81 @@ function getServerScript(): string | undefined {
 }
 
 /**
- * Find the venv Python that has mlx-audio installed.
+ * Find the Python interpreter that has the TTS dependencies.
+ * @returns A venv interpreter if one exists, else the OS's python command.
  */
-function findVenvPython(): string {
+function findPython(): string {
 	for (const root of getProjectRootCandidates()) {
-		const venvPython = path.join(root, ".venv", "bin", "python3");
-		if (fs.existsSync(venvPython)) {
-			return path.resolve(venvPython);
-		}
+		const p = venvPython(root);
+		if (fs.existsSync(p)) return path.resolve(p);
 	}
-	return "python3";
+	return systemPython();
 }
 
 /**
- * Start the TTS server daemon and wait for it to be ready.
- * Resolves true if server started successfully, false otherwise.
+ * Start the TTS server daemon and wait for it to answer.
+ * @returns Resolves with the endpoint, or undefined on failure or timeout.
  */
-function startServer(): Promise<boolean> {
+function startServer(): Promise<Endpoint | undefined> {
 	return new Promise((resolve) => {
 		const serverScript = getServerScript();
 		if (!serverScript) {
 			console.error("[tts-bridge] Server script not found in workspace:", workspaceRoot);
-			resolve(false);
+			resolve(undefined);
 			return;
 		}
 
-		const pythonBin = findVenvPython();
+		const pythonBin = findPython();
 		console.log(`[tts-bridge] Starting TTS server daemon using ${pythonBin}...`);
 
 		const env = { ...process.env };
 		if (workspaceRoot) env.TTS_WORKSPACE_ROOT = workspaceRoot;
 
-		cp.execFile(pythonBin, [serverScript, "--daemon"], { timeout: 10_000, env }, (err) => {
+		let settled = false;
+		const settle = (ep: Endpoint | undefined) => {
+			if (settled) return;
+			settled = true;
+			clearInterval(poll);
+			resolve(ep);
+		};
+
+		cp.execFile(pythonBin, [serverScript, "--daemon"], { timeout: 10_000, env }, (err, _stdout, stderr) => {
 			if (err) {
-				console.error("[tts-bridge] Failed to start server daemon:", err);
-				clearInterval(poll);
-				resolve(false);
+				console.error("[tts-bridge] Failed to start server daemon:", stderr.trim() || err);
+				settle(undefined);
 			}
 		});
 
-		// Poll for socket to appear, then ping to confirm server is ready
 		const deadline = Date.now() + SERVER_START_TIMEOUT_MS;
+		let checking = false;
 		const poll = setInterval(async () => {
-			if (fs.existsSync(SOCKET_PATH) && await pingServer()) {
-				clearInterval(poll);
-				resolve(true);
-			} else if (Date.now() > deadline) {
-				clearInterval(poll);
-				console.error("[tts-bridge] Server did not start in time.");
-				resolve(false);
+			if (checking) return;
+			checking = true;
+			try {
+				const ep = readEndpoint();
+				if (ep && (await pingServer(ep))) {
+					settle(ep);
+				} else if (Date.now() > deadline) {
+					console.error("[tts-bridge] Server did not start in time.");
+					settle(undefined);
+				}
+			} finally {
+				checking = false;
 			}
 		}, 500);
 	});
 }
 
-let pendingEnsure: Promise<boolean> | undefined;
+let pendingEnsure: Promise<Endpoint | undefined> | undefined;
 
 /**
- * Ensure the TTS server is running. Starts it if needed.
- * Concurrent calls are coalesced into a single startup attempt.
- * Returns true if server is available, false otherwise.
+ * Return a live endpoint, starting the server if needed.
+ * Concurrent calls share one startup attempt.
+ * @returns The endpoint, or undefined if TTS is unavailable.
  */
-export async function ensureServer(): Promise<boolean> {
+async function ensureEndpoint(): Promise<Endpoint | undefined> {
 	if (pendingEnsure) return pendingEnsure;
-	pendingEnsure = ensureServerImpl();
+	pendingEnsure = (async () => (await liveEndpoint()) ?? (await startServer()))();
 	try {
 		return await pendingEnsure;
 	} finally {
@@ -171,27 +166,22 @@ export async function ensureServer(): Promise<boolean> {
 	}
 }
 
-async function ensureServerImpl(): Promise<boolean> {
-	// Fast path: socket exists and server responds to ping
-	if (fs.existsSync(SOCKET_PATH)) {
-		if (await pingServer()) {
-			return true;
-		}
-		// Socket exists but server is dead — clean up
-		console.log("[tts-bridge] Stale socket detected, cleaning up...");
-		cleanupStaleFiles();
-	}
-
-	// Server not running — try to start it
-	return startServer();
+/**
+ * Ensure the TTS server is running. Starts it if needed.
+ * @returns Resolves true if the server is available.
+ */
+export async function ensureServer(): Promise<boolean> {
+	return (await ensureEndpoint()) !== undefined;
 }
 
 /**
- * Streams TTS audio from the Kokoro server.
- * Automatically starts the server if it's not running.
- * Calls onChunk with base64-encoded float32 PCM data for each sentence.
- * Calls onEnd when the stream completes.
- * Returns a function to abort the stream.
+ * Streams TTS audio from the server, starting it if needed.
+ * @param text - Narration.
+ * @param options - Voice and speed.
+ * @param onChunk - Receives base64 float32 PCM per sentence and the sample rate.
+ * @param onEnd - Called when the stream completes.
+ * @param onError - Called on failure.
+ * @returns A function that aborts the stream.
  */
 export function streamTTS(
 	text: string,
@@ -204,12 +194,13 @@ export function streamTTS(
 	let conn: net.Socket | undefined;
 
 	const run = async () => {
-		if (!(await ensureServer())) {
+		const ep = await ensureEndpoint();
+		if (!ep) {
 			if (!aborted) onError(new Error("TTS server unavailable"));
 			return;
 		}
 		if (aborted) return;
-		conn = connectAndStream(text, options, onChunk, onEnd, onError, () => aborted);
+		conn = connectAndStream(ep, text, options, onChunk, onEnd, onError, () => aborted);
 	};
 
 	run();
@@ -221,9 +212,11 @@ export function streamTTS(
 }
 
 /**
- * Internal: connect to the running server and stream audio.
+ * Connect to a running server and stream audio frames.
+ * @returns The socket, so the caller can abort.
  */
 function connectAndStream(
+	ep: Endpoint,
 	text: string,
 	options: TTSOptions,
 	onChunk: (base64Data: string, sampleRate: number) => void,
@@ -233,10 +226,11 @@ function connectAndStream(
 ): net.Socket {
 	let ended = false;
 
-	const conn = net.createConnection(SOCKET_PATH);
+	const conn = net.createConnection({ host: ep.host, port: ep.port });
 
 	conn.on("connect", () => {
 		const request = JSON.stringify({
+			token: ep.token,
 			text,
 			voice: options.voice,
 			speed: options.speed,
@@ -293,15 +287,9 @@ function connectAndStream(
 }
 
 /**
- * Check if the TTS server is available (quick, non-blocking check).
- * For a more reliable check that auto-starts the server, use streamTTS directly.
+ * Quick, non-blocking check whether TTS can be used.
+ * @returns True if a server is advertised or the server script is installed (it auto-starts).
  */
 export function isTTSAvailable(): boolean {
-	// If socket exists and process is alive, likely available
-	if (fs.existsSync(SOCKET_PATH) && isServerProcessAlive()) {
-		return true;
-	}
-	// Even if server is down, we can auto-start it — so report available
-	// if the server script exists (meaning TTS is installed)
-	return getServerScript() !== undefined;
+	return readEndpoint() !== undefined || getServerScript() !== undefined;
 }

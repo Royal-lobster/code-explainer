@@ -6,3 +6,4 @@ package-lock.json
 **/*.ts
 **/*.map
 .gitignore
+test/**

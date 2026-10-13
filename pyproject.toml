@@ -30,8 +30,7 @@ addopts = "-m 'not real_tts'"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-# Legacy scripts, rewritten in later tasks (podcast.py: Task 6)
-extend-exclude = ["scripts/podcast.py"]
+
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "D"]

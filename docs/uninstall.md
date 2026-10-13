@@ -10,12 +10,7 @@ Kill the TTS server if it's running.
 
 ```bash
 # Stop TTS server
-if [ -f /tmp/tts-server.pid ]; then
-    kill "$(cat /tmp/tts-server.pid)" 2>/dev/null
-    echo "TTS server stopped"
-else
-    echo "TTS server not running"
-fi
+python3 ~/.claude/skills/explainer/scripts/tts_server.py --stop 2>/dev/null || true
 ```
 
 **Verify:**
@@ -49,7 +44,7 @@ code --list-extensions 2>/dev/null | grep -i code-explainer || echo "VS Code: cl
 cursor --list-extensions 2>/dev/null | grep -i code-explainer || echo "Cursor: clean"
 ```
 
-After uninstalling, reload your editor: **Cmd+Shift+P** → **Developer: Reload Window**
+After uninstalling, reload your editor: **Cmd/Ctrl+Shift+P** → **Developer: Reload Window**
 
 ---
 
@@ -76,15 +71,13 @@ Remove temporary files created during use.
 ```bash
 rm -f ~/.claude-explainer-port
 rm -f ~/.claude-explainer-token
-rm -f /tmp/tts-server.sock
-rm -f /tmp/tts-server.pid
-rm -f /tmp/tts-server.log
+rm -rf ~/.code-explainer
 ```
 
 **Verify:**
 
 ```bash
-for f in ~/.claude-explainer-port ~/.claude-explainer-token /tmp/tts-server.sock /tmp/tts-server.pid /tmp/tts-server.log; do
+for f in ~/.claude-explainer-port ~/.claude-explainer-token ~/.code-explainer; do
     [ -e "$f" ] && echo "WARNING: $f still exists" || echo "$f removed"
 done
 ```
@@ -102,10 +95,8 @@ set -e
 echo "Uninstalling Code Explainer..."
 
 # 1. Stop TTS server
-if [ -f /tmp/tts-server.pid ]; then
-    kill "$(cat /tmp/tts-server.pid)" 2>/dev/null || true
-    echo "  Stopped TTS server"
-fi
+python3 ~/.claude/skills/explainer/scripts/tts_server.py --stop 2>/dev/null || true
+echo "  Stopped TTS server"
 
 # 2. Uninstall extension
 code --uninstall-extension srujangurram.code-explainer 2>/dev/null && echo "  Removed VS Code extension" || true
@@ -117,11 +108,11 @@ echo "  Removed skill directory"
 
 # 4. Clean up runtime files
 rm -f ~/.claude-explainer-port ~/.claude-explainer-token
-rm -f /tmp/tts-server.sock /tmp/tts-server.pid /tmp/tts-server.log
+rm -rf ~/.code-explainer
 echo "  Cleaned up runtime files"
 
 echo ""
-echo "Done. Reload your editor: Cmd+Shift+P → 'Developer: Reload Window'"
+echo "Done. Reload your editor: Cmd/Ctrl+Shift+P → 'Developer: Reload Window'"
 ```
 
 ---
@@ -133,4 +124,4 @@ echo "Done. Reload your editor: Cmd+Shift+P → 'Developer: Reload Window'"
 | Skill files + venv + TTS model | `~/.claude/skills/explainer/` | ~500 MB |
 | VS Code extension | Editor extensions directory | ~1 MB |
 | Port/token files | `~/.claude-explainer-port`, `~/.claude-explainer-token` | <1 KB |
-| TTS runtime files | `/tmp/tts-server.*` | <1 KB |
+| TTS runtime files | `~/.code-explainer/run/` | <1 KB |

@@ -8,7 +8,7 @@ A VS Code extension that works with your coding agent to scan your codebase, bui
 
 - **Sidebar Panel** — Dedicated sidebar with walkthrough controls, segment navigation, and live explanation display
 - **Code Highlighting** — Automatically opens files, scrolls to code, and highlights line ranges
-- **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M, running locally on Apple Silicon via mlx-audio
+- **Local TTS** - Natural-sounding voice narration powered by Kokoro-82M, running locally (MLX on Apple Silicon, PyTorch on Linux and Intel Macs)
 - **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - **Adaptive Depth** — Overview, detailed, or focused explanations based on your familiarity
 
@@ -65,7 +65,7 @@ You can also type commands in your agent's chat:
 
 ## Voice Configuration
 
-Uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [mlx-audio](https://github.com/Blaizzy/mlx-audio) for high-quality local TTS. Falls back to macOS `say` if unavailable.
+Uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) for high-quality local TTS. The engine is chosen automatically (set `TTS_BACKEND=mlx|torch` to override). If no engine is installed, walkthroughs still run, without voice.
 
 ### Available Voices
 
@@ -81,7 +81,7 @@ Uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [mlx-audio](htt
 
 ## Requirements
 
-- macOS (Apple Silicon recommended for GPU-accelerated TTS)
+- macOS or Linux (Apple Silicon or an NVIDIA GPU makes TTS faster; CPU works). Windows: use WSL.
 - Python 3.10+
 - Node.js 18+
 - A coding agent (Claude Code, Codex, OpenCode, Kilo Code, Amp, etc.) with the Code Explainer skill installed

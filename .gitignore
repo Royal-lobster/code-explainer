@@ -2,6 +2,9 @@
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
 
 # Node
 node_modules/
@@ -10,3 +13,6 @@ out/
 
 # OS
 .DS_Store
+
+# Agent workspace
+.superpowers/

@@ -245,7 +245,8 @@ if [[ "$OS" == "Linux" ]] && ! command -v nvidia-smi &>/dev/null; then
     echo "  No NVIDIA GPU detected - installing CPU-only PyTorch (much smaller download)"
     pip_install torch --index-url https://download.pytorch.org/whl/cpu
 fi
-pip_install -e "$SCRIPT_DIR[tts]"
+
+pip_install -e "$SCRIPT_DIR[tts]" pip
 ok "TTS dependencies installed"
 
 # ── Step 4: Build and install VS Code extension ─────────────────────────────

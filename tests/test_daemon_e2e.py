@@ -87,3 +87,14 @@ def test_daemon_fails_fast_without_backend(fake_env: Path, monkeypatch: pytest.M
     assert time.monotonic() - started < 10
     with pytest.raises(RuntimeError, match="Unknown TTS_BACKEND"):
         client.ensure_server(python=PYTHON)
+
+
+def test_stop_flag_without_numpy(fake_env: Path) -> None:
+    """``--stop`` needs only the stdlib, so the uninstall steps work with a bare system Python."""
+    client.ensure_server(python=PYTHON, start_timeout=30)
+    result = subprocess.run(
+        [str(PYTHON), "-S", str(client.SERVER_SCRIPT), "--stop"], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Stopped" in result.stdout
+    wait_until_gone()

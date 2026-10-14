@@ -12,8 +12,6 @@ import sys
 import threading
 import time
 
-import numpy as np
-
 from codeexplainer import client, daemon, paths, protocol
 from codeexplainer.endpoint import Endpoint, remove_endpoint, write_endpoint
 from codeexplainer.tts import registry
@@ -26,7 +24,12 @@ def log(message: str) -> None:
 
 
 class TTSServer:
-    """Serves one request at a time from a single loaded backend."""
+    """Serves each connection on its own thread from a single loaded backend.
+
+    Pings and shutdowns are answered immediately, even mid-narration, so clients
+    never mistake a busy server for a dead one. Synthesis is serialized because
+    backends are not thread-safe.
+    """
 
     def __init__(
         self,
@@ -57,6 +60,10 @@ class TTSServer:
         self.token = secrets.token_hex(32)
         self._stop = threading.Event()
         self._listener: socket.socket | None = None
+        self._synth_lock = threading.Lock()
+        self._activity_lock = threading.Lock()
+        self._in_flight = 0
+        self._last_activity = time.monotonic()
 
     def start(self) -> Endpoint:
         """Bind an ephemeral port and publish the endpoint file.
@@ -78,14 +85,15 @@ class TTSServer:
         self._stop.set()
 
     def serve_forever(self) -> None:
-        """Handle requests until stopped or idle, then remove the endpoint file."""
+        """Accept connections until stopped or idle, then remove the endpoint file."""
         if self._listener is None:
             self.start()
         assert self._listener is not None
-        last_activity = time.monotonic()
+        with self._activity_lock:
+            self._last_activity = time.monotonic()
         try:
             while not self._stop.is_set():
-                idle = time.monotonic() - last_activity
+                idle = self._idle_seconds()
                 if self.idle_timeout > 0 and idle >= self.idle_timeout:
                     log(f"Idle for {int(idle)}s, shutting down to free memory.")
                     break
@@ -93,12 +101,17 @@ class TTSServer:
                     conn, _ = self._listener.accept()
                 except TimeoutError:
                     continue
-                with conn:
-                    if self._handle(conn):
-                        last_activity = time.monotonic()
+                threading.Thread(target=self._serve_connection, args=(conn,), daemon=True).start()
         finally:
             self._listener.close()
             remove_endpoint(only_if_pid=os.getpid())
+
+    def _idle_seconds(self) -> float:
+        """Return how long the server has been idle; 0 while a request is running."""
+        with self._activity_lock:
+            if self._in_flight:
+                return 0.0
+            return time.monotonic() - self._last_activity
 
     def _authorized(self, request: dict) -> bool:
         """Check the request token in constant time."""
@@ -107,35 +120,57 @@ class TTSServer:
             supplied.encode("utf-8"), self.token.encode("utf-8")
         )
 
-    def _handle(self, conn: socket.socket) -> bool:
-        """Serve one connection.
+    def _serve_connection(self, conn: socket.socket) -> None:
+        """Serve one connection on a worker thread, then close it.
 
-        Returns:
-            True if the request was authenticated (counts as activity).
+        Only authenticated requests count as activity for the idle timer.
+
+        Args:
+            conn: Accepted connection.
         """
-        conn.settimeout(30.0)
-        try:
-            request = protocol.read_request(conn)
+        with conn:
+            conn.settimeout(30.0)
+            try:
+                request = protocol.read_request(conn)
+            except Exception as exc:  # noqa: BLE001 - one bad request must not kill the server
+                log(f"Request failed: {type(exc).__name__}: {exc}")
+                return
             if not self._authorized(request):
                 log("Rejected request with a missing or wrong token.")
-                return False
-            if request.get("shutdown"):
-                conn.sendall(protocol.END_FRAME)
-                self.stop()
-                return True
-            text = str(request.get("text") or "").strip()
-            if text and not request.get("ping"):
-                voice = str(request.get("voice") or self.default_voice)
-                speed = float(request.get("speed") or self.default_speed)
+                return
+            with self._activity_lock:
+                self._in_flight += 1
+            try:
+                self._respond(conn, request)
+            except Exception as exc:  # noqa: BLE001 - one bad request must not kill the server
+                log(f"Request failed: {type(exc).__name__}: {exc}")
+            finally:
+                with self._activity_lock:
+                    self._in_flight -= 1
+                    self._last_activity = time.monotonic()
+
+    def _respond(self, conn: socket.socket, request: dict) -> None:
+        """Answer an authenticated request: shutdown, ping, or synthesis.
+
+        Raises:
+            Exception: Whatever the backend or socket raises; the caller logs it.
+        """
+        if request.get("shutdown"):
+            conn.sendall(protocol.END_FRAME)
+            self.stop()
+            return
+        text = str(request.get("text") or "").strip()
+        if text and not request.get("ping"):
+            import numpy as np  # deferred so control commands (--stop) work without numpy
+
+            voice = str(request.get("voice") or self.default_voice)
+            speed = float(request.get("speed") or self.default_speed)
+            with self._synth_lock:
                 for chunk in self.backend.synthesize(text, voice, speed):
                     if chunk.size:
                         pcm = np.ascontiguousarray(chunk, dtype="<f4").tobytes()
                         conn.sendall(protocol.encode_frame(pcm))
-            conn.sendall(protocol.END_FRAME)
-            return True
-        except Exception as exc:  # noqa: BLE001 - one bad request must not kill the server
-            log(f"Request failed: {type(exc).__name__}: {exc}")
-            return False
+        conn.sendall(protocol.END_FRAME)
 
 
 def run() -> int:

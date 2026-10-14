@@ -144,3 +144,110 @@ def test_second_server_defers_to_live_one(
     monkeypatch.setenv("TTS_BACKEND", "fake")
     assert server.run() == 0
     assert read_endpoint() == ep
+
+
+class BlockingBackend(FakeBackend):
+    """Holds every synthesis open until released, like a slow CPU engine."""
+
+    def __init__(self) -> None:
+        """Create the backend with its started and release events."""
+        super().__init__()
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def synthesize(self, text: str, voice: str, speed: float) -> Iterator[np.ndarray]:
+        """Signal ``started``, wait for ``release``, then behave like FakeBackend."""
+        self.started.set()
+        assert self.release.wait(timeout=30), "test never released the backend"
+        yield from super().synthesize(text, voice, speed)
+
+
+def stream_in_background(ep: Endpoint, text: str) -> tuple[threading.Thread, list[bytes]]:
+    """Stream ``text`` on a thread, collecting the chunks."""
+    chunks: list[bytes] = []
+    thread = threading.Thread(
+        target=lambda: chunks.extend(client.stream_audio(ep, text, "af_heart", 1.0)), daemon=True
+    )
+    thread.start()
+    return thread, chunks
+
+
+def test_ping_answers_while_synthesizing(state_dir: Path) -> None:
+    """A busy server still answers pings, so clients never mistake it for a dead one."""
+    backend = BlockingBackend()
+    srv, thread, ep = start(backend, idle_timeout=0)
+    try:
+        streamer, chunks = stream_in_background(ep, "One. Two.")
+        assert backend.started.wait(timeout=5)
+        assert client.ping(ep, timeout=1.0)
+        assert client.live_endpoint() == ep
+        backend.release.set()
+        streamer.join(timeout=10)
+        assert len(chunks) == 2
+    finally:
+        backend.release.set()
+        srv.stop()
+        thread.join(timeout=5)
+
+
+def test_silent_connection_does_not_block_others(state_dir: Path) -> None:
+    """A local process that connects and never sends must not stall the server."""
+    srv, thread, ep = start(FakeBackend(), idle_timeout=0)
+    try:
+        with socket.create_connection((ep.host, ep.port), timeout=5):
+            assert client.ping(ep, timeout=1.0)
+            assert len(list(client.stream_audio(ep, "Hi.", "af_heart", 1.0, timeout=2.0))) == 1
+    finally:
+        srv.stop()
+        thread.join(timeout=5)
+
+
+def test_concurrent_requests_are_serialized(state_dir: Path) -> None:
+    """Two narrations both complete; the backend never runs them at the same time."""
+
+    class CountingBackend(FakeBackend):
+        """Records the peak number of overlapping syntheses."""
+
+        def __init__(self) -> None:
+            """Create the backend with zeroed counters."""
+            super().__init__()
+            self.active = 0
+            self.peak = 0
+
+        def synthesize(self, text: str, voice: str, speed: float) -> Iterator[np.ndarray]:
+            """Track overlap while yielding slowly."""
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+            try:
+                for chunk in super().synthesize(text, voice, speed):
+                    time.sleep(0.05)
+                    yield chunk
+            finally:
+                self.active -= 1
+
+    backend = CountingBackend()
+    srv, thread, ep = start(backend, idle_timeout=0)
+    try:
+        streams = [stream_in_background(ep, "A. B. C.") for _ in range(3)]
+        for streamer, chunks in streams:
+            streamer.join(timeout=10)
+            assert len(chunks) == 3
+        assert backend.peak == 1
+    finally:
+        srv.stop()
+        thread.join(timeout=5)
+
+
+def test_idle_timeout_waits_for_running_request(state_dir: Path) -> None:
+    """A long narration is not cut off by the idle timer."""
+    backend = BlockingBackend()
+    srv, thread, ep = start(backend, idle_timeout=0.3)
+    streamer, chunks = stream_in_background(ep, "One.")
+    assert backend.started.wait(timeout=5)
+    time.sleep(0.8)
+    assert thread.is_alive(), "server idled out mid-request"
+    backend.release.set()
+    streamer.join(timeout=10)
+    assert len(chunks) == 1
+    thread.join(timeout=5)
+    assert not thread.is_alive()

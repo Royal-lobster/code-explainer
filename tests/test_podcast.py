@@ -48,3 +48,21 @@ def test_podcast_writes_wav(
         ep = read_endpoint()
         if ep:
             client.shutdown(ep)
+
+
+def test_podcast_reports_server_start_failure_without_traceback(
+    state_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A server that refuses to start yields a one-line error and exit code 1."""
+    monkeypatch.setenv("TTS_BACKEND", "bogus")
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps({"segments": [{"id": 1, "ttsText": "Hello."}]}))
+    result = subprocess.run(
+        [sys.executable, str(PODCAST), str(plan), str(tmp_path / "out.wav")],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr
+    assert "[podcast] Error: TTS server failed to start" in result.stderr
+    assert "Unknown TTS_BACKEND 'bogus'" in result.stderr

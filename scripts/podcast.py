@@ -108,4 +108,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (RuntimeError, OSError) as exc:
+        print(f"[podcast] Error: {exc}", file=sys.stderr)
+        sys.exit(1)

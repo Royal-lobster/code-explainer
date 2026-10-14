@@ -27,7 +27,7 @@
 
 - 🪟 **VS Code Sidebar** — Dedicated sidebar panel with walkthrough controls, segment navigation, and live explanation display
 - 🎯 **Code Highlighting** — Automatically opens files, scrolls to code, and highlights 1–8 line ranges with per-highlight explanations
-- 🔊 **Local TTS** — Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally on Apple Silicon via mlx-audio
+- 🔊 **Local TTS** - Natural-sounding voice narration powered by Kokoro-82M (#1 ranked open-source TTS), running locally (MLX on Apple Silicon, PyTorch on Linux and Intel Macs)
 - 🎬 **Three Modes** — Walkthrough (hands-free with TTS), Read (text in terminal), or Podcast (single audio file)
 - 🧠 **Adaptive Depth** — Overview or Deep Dive explanations based on your familiarity
 - 📋 **Plan-First** — Scout finds files, planner builds narrative order, parallel segment agents generate highlights — outline visible immediately, segments stream in as they finish
@@ -36,7 +36,7 @@
 
 ## 📦 Requirements
 
-- 🍎 macOS (Apple Silicon recommended for GPU-accelerated TTS)
+- 🍎 macOS or 🐧 Linux (Apple Silicon or an NVIDIA GPU makes TTS faster; CPU works). Windows: use WSL.
 - 🐍 Python 3.10+
 - 📗 Node.js 18+
 - 🖥️ VS Code or Cursor with CLI enabled (`code` or `cursor` command)
@@ -69,7 +69,7 @@ Then run setup:
 
 ```bash
 <SKILLS_DIR>/explainer/setup.sh
-# Reload your editor: Cmd+Shift+P → "Developer: Reload Window"
+# Reload your editor: Cmd/Ctrl+Shift+P → "Developer: Reload Window"
 ```
 
 ### Rule-based agents
@@ -83,7 +83,7 @@ git clone https://github.com/Royal-lobster/code-explainer.git ~/code-explainer
 # 2. Run setup
 ~/code-explainer/setup.sh
 
-# 3. Reload your editor: Cmd+Shift+P → "Developer: Reload Window"
+# 3. Reload your editor: Cmd/Ctrl+Shift+P → "Developer: Reload Window"
 ```
 
 Then add a rule or instruction pointing to the skill:
@@ -100,7 +100,7 @@ Then add a rule or instruction pointing to the skill:
 
 ### What setup.sh does
 
-- 🐍 Python venv creation with TTS engine (mlx-audio + sounddevice)
+- 🐍 Python venv creation with TTS engine (mlx-audio on Apple Silicon, kokoro/PyTorch elsewhere)
 - 🧩 VS Code extension build and installation (.vsix for VS Code + Cursor)
 - 🗣️ Voice model download (~330 MB)
 - 🔑 Script permissions
@@ -220,7 +220,7 @@ You can also type commands in your agent's chat:
 
 ## 🗣️ Voice Configuration
 
-Code Explainer uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [mlx-audio](https://github.com/Blaizzy/mlx-audio) for high-quality local TTS. Falls back to macOS `say` if unavailable.
+Code Explainer uses [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) for high-quality local TTS. The engine is chosen automatically (set `TTS_BACKEND=mlx|torch` to override). If no engine is installed, walkthroughs still run, without voice.
 
 ```bash
 # Change voice

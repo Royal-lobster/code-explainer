@@ -5,7 +5,7 @@ set -e
 # Code Explainer — Setup Script
 # ============================================================================
 # Interactive code walkthrough skill with VS Code highlighting and TTS.
-# Works on macOS with Apple Silicon (M1/M2/M3/M4).
+# Works on macOS (Apple Silicon uses MLX; Intel uses PyTorch) and Linux (PyTorch).
 #
 # Usage: ./setup.sh
 # ============================================================================
@@ -45,18 +45,47 @@ echo -e "${BOLD}╚════════════════════�
 # ── Step 1: Check prerequisites ─────────────────────────────────────────────
 header "Checking prerequisites"
 
-# macOS check
-if [[ "$(uname)" != "Darwin" ]]; then
-    fail "This skill requires macOS (detected: $(uname))"
-fi
-ok "macOS detected"
+# OS check
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+case "$OS" in
+    Darwin)
+        ok "macOS detected"
+        MOD_KEY="Cmd"
+        if [[ "$ARCH" == "arm64" ]]; then
+            ok "Apple Silicon detected - TTS will use MLX (GPU)"
+        else
+            warn "Intel Mac detected - TTS will use PyTorch on CPU (needs Python 3.12 or older)"
+        fi
+        ;;
+    Linux)
+        ok "Linux detected ($ARCH)"
+        MOD_KEY="Ctrl"
+        ;;
+    MINGW*|MSYS*|CYGWIN*)
+        fail "Native Windows setup is not supported yet. Run this script inside WSL."
+        ;;
+    *)
+        fail "Unsupported OS: $OS"
+        ;;
+esac
 
-# Apple Silicon check
-if [[ "$(uname -m)" == "arm64" ]]; then
-    ok "Apple Silicon detected"
-else
-    warn "Intel Mac detected — TTS will run on CPU (slower)"
-fi
+# install_hint <brew package> <linux package>: print an install command for this OS
+install_hint() {
+    if [[ "$OS" == "Darwin" ]]; then
+        echo "brew install $1"
+    elif command -v apt-get &>/dev/null; then
+        echo "sudo apt install $2"
+    elif command -v dnf &>/dev/null; then
+        echo "sudo dnf install $2"
+    elif command -v pacman &>/dev/null; then
+        echo "sudo pacman -S $2"
+    elif command -v zypper &>/dev/null; then
+        echo "sudo zypper install $2"
+    else
+        echo "your package manager ($2)"
+    fi
+}
 
 # Editor CLI check (VS Code or Cursor)
 EDITORS=()
@@ -69,7 +98,7 @@ if command -v cursor &>/dev/null; then
     ok "Cursor CLI found"
 fi
 if [[ ${#EDITORS[@]} -eq 0 ]]; then
-    fail "No editor CLI found. Install VS Code ('code') or Cursor ('cursor') and enable the CLI command: Cmd+Shift+P → 'Shell Command: Install ...'"
+    fail "No editor CLI found. Install VS Code ('code') or Cursor ('cursor') and enable the CLI command: ${MOD_KEY}+Shift+P -> 'Shell Command: Install ...' (on Linux the CLI is usually installed with the editor package)"
 fi
 
 # Node.js check (for VS Code extension)
@@ -77,19 +106,25 @@ if command -v node &>/dev/null; then
     NODE_VERSION=$(node --version)
     ok "Node.js found: $NODE_VERSION"
 else
-    fail "Node.js not found. Install via: brew install node"
+    fail "Node.js not found. Install via: $(install_hint node "nodejs npm")"
 fi
 
 # npm check
 if command -v npm &>/dev/null; then
     ok "npm found: $(npm --version)"
 else
-    fail "npm not found. Install via: brew install node"
+    fail "npm not found. Install via: $(install_hint node "nodejs npm")"
 fi
 
 # Python 3.10+ check
 PYTHON=""
-for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
+# PyTorch has no Intel macOS wheels for Python 3.13+
+if [[ "$OS" == "Darwin" && "$ARCH" != "arm64" ]]; then
+    PY_CANDIDATES=(python3.12 python3.11 python3.10)
+else
+    PY_CANDIDATES=(python3.13 python3.12 python3.11 python3.10 python3)
+fi
+for candidate in "${PY_CANDIDATES[@]}"; do
     if command -v "$candidate" &>/dev/null; then
         PY_VERSION=$("$candidate" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
         PY_MAJOR=$("$candidate" -c "import sys; print(sys.version_info.major)" 2>/dev/null)
@@ -104,7 +139,7 @@ done
 if [[ -n "$PYTHON" ]]; then
     ok "Python $PY_VERSION found: $(which "$PYTHON")"
 else
-    fail "Python 3.10+ not found. Install via: brew install python@3.13"
+    fail "Python 3.10+ not found (Intel Macs need 3.10-3.12). Install via: $(install_hint python@3.12 python3)"
 fi
 
 # uv check (preferred) or pip fallback
@@ -113,7 +148,7 @@ if command -v uv &>/dev/null; then
     ok "uv found (fast package manager)"
     USE_UV=true
 else
-    warn "uv not found — using pip (slower). Install uv for faster setup: brew install uv"
+    warn "uv not found — using pip (slower). Install uv for faster setup: https://docs.astral.sh/uv/getting-started/installation/"
 fi
 
 # ── Step 2: Configure AI models ─────────────────────────────────────────────
@@ -191,23 +226,28 @@ fi
 VENV_PYTHON="$VENV_DIR/bin/python3"
 
 # ── Step 3: Install TTS dependencies ────────────────────────────────────────
-header "Installing TTS dependencies (mlx-audio + sounddevice)"
+header "Installing TTS dependencies"
+
+# pip_install <args...>: install into the venv; on failure show the tail of the log and abort.
+# (Capturing instead of piping keeps the installer's exit status, which a `| grep` would mask.)
+pip_install() {
+    local out
+    if $USE_UV; then
+        out=$(uv pip install --python "$VENV_PYTHON" "$@" 2>&1) || { echo "$out" | tail -20; fail "Install failed: $*"; }
+    else
+        out=$("$VENV_PYTHON" -m pip install "$@" 2>&1) || { echo "$out" | tail -20; fail "Install failed: $*"; }
+    fi
+    echo "$out" | grep -E "^(Resolved|Installed|Successfully)" | head -2 || true
+}
 
 echo "  This may take a few minutes on first install..."
-
-if $USE_UV; then
-    uv pip install --python "$VENV_PYTHON" pip mlx-audio sounddevice 2>&1 | grep -E "^(Installed|Already|Resolved)" | head -5
-else
-    "$VENV_PYTHON" -m pip install --quiet mlx-audio sounddevice 2>&1 | tail -3
+if [[ "$OS" == "Linux" ]] && ! command -v nvidia-smi &>/dev/null; then
+    echo "  No NVIDIA GPU detected - installing CPU-only PyTorch (much smaller download)"
+    pip_install torch --index-url https://download.pytorch.org/whl/cpu
 fi
+
+pip_install -e "$SCRIPT_DIR[tts]" pip
 ok "TTS dependencies installed"
-
-# Verify TTS can import
-if "$VENV_PYTHON" -c "from mlx_audio.tts.generate import generate_audio; print('ok')" 2>/dev/null | grep -q "ok"; then
-    ok "TTS engine verified"
-else
-    warn "TTS import failed — TTS will fall back to macOS 'say' command"
-fi
 
 # ── Step 4: Build and install VS Code extension ─────────────────────────────
 header "Building and installing extension"
@@ -223,7 +263,7 @@ npm run compile --silent 2>&1
 ok "TypeScript compiled"
 
 # Package as VSIX
-npx @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
+npx --yes @vscode/vsce package --no-dependencies --allow-star-activation --allow-missing-repository 2>&1 | grep -E "^( DONE|VSIX)" | head -1
 VSIX_FILE=$(ls -t "$EXT_DIR"/*.vsix 2>/dev/null | head -1)
 if [[ -z "$VSIX_FILE" ]]; then
     fail "VSIX packaging failed — no .vsix file found"
@@ -249,23 +289,12 @@ ok "All scripts marked executable"
 # ── Step 6: Pre-download TTS model ──────────────────────────────────────────
 header "Pre-downloading TTS voice model"
 
-echo "  Downloading model (~330 MB on first run)..."
-if "$VENV_PYTHON" -c "
-from mlx_audio.tts.generate import generate_audio
-import tempfile, os
-with tempfile.TemporaryDirectory() as d:
-    generate_audio(
-        text='Setup complete.',
-        model='prince-canuma/Kokoro-82M',
-        voice='af_heart',
-        lang_code='a',
-        file_prefix=os.path.join(d, 'test'),
-        verbose=False,
-    )
-" 2>&1 | grep -v "^Fetching\|^$\|INFO\|pip\|spacy\|Collecting\|Downloading\|Installing\|Successfully\|✔" | tail -1; then
-    ok "TTS model downloaded and cached"
+echo "  Downloading voice model on first run (~330 MB)..."
+if WARMUP_OUT=$("$VENV_PYTHON" -m codeexplainer.tts.warmup 2>&1); then
+    ok "TTS ready (${WARMUP_OUT##*$'\n'})"
 else
-    warn "Model download had issues — will retry on first use"
+    warn "TTS warm-up failed: ${WARMUP_OUT##*$'\n'}"
+    warn "Walkthroughs will run without voice until this is fixed."
 fi
 
 # ── Done ────────────────────────────────────────────────────────────────────
@@ -277,7 +306,7 @@ echo ""
 echo -e "  ${BOLD}Skill installed at:${NC} $SCRIPT_DIR"
 echo ""
 echo -e "  ${BOLD}Next steps:${NC}"
-echo -e "  1. Reload your editor: ${BLUE}Cmd+Shift+P → 'Developer: Reload Window'${NC}"
+echo -e "  1. Reload your editor: ${BLUE}${MOD_KEY}+Shift+P -> 'Developer: Reload Window'${NC}"
 
 # Detect which agents are available and print relevant guidance
 DETECTED_AGENTS=()

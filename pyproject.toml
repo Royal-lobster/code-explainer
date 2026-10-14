@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "code-explainer"
+version = "0.2.0"
+description = "Interactive code walkthroughs with local voice narration."
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26"]
+
+[project.optional-dependencies]
+# Environment markers are the packaging half of the compatibility layer:
+# one `pip install -e ".[tts]"` picks the right engine for the machine.
+tts = [
+    "mlx-audio>=0.2.10; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "kokoro>=0.9.4; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    # torch 2.2 is the last release with Intel macOS wheels. It was built against NumPy 1.x
+    # (under NumPy 2 every tensor.numpy() call fails with "Numpy is not available"), and
+    # transformers 5 disables PyTorch below 2.5, which breaks kokoro's model loading.
+    "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "transformers<5; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts/codeexplainer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+markers = ["real_tts: needs a real TTS engine and model download (slow)"]
+addopts = "-m 'not real_tts'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Docs contain illustrative code blocks that ruff would otherwise reformat
+extend-exclude = ["docs"]
+
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "D"]
+ignore = ["D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

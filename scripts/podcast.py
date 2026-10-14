@@ -16,97 +16,47 @@ The plan JSON must have this structure:
         ]
     }
 
-Requires the TTS server to be running (tts_server.py).
+Starts the TTS server automatically if it is not running.
 """
 
+from __future__ import annotations
+
+import array
 import json
 import os
-import socket
-import struct
 import sys
 import wave
 
-SOCKET_PATH = "/tmp/tts-server.sock"
-SAMPLE_RATE = 24000  # Kokoro-82M default sample rate
+from codeexplainer import client
+from codeexplainer.endpoint import Endpoint
+from codeexplainer.protocol import SAMPLE_RATE
+
 PAUSE_SECONDS = 0.8  # Silence between segments
 
 
-def ensure_tts_server():
-    """Start the TTS server if it's not already running."""
-    if os.path.exists(SOCKET_PATH):
-        return
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    server_script = os.path.join(script_dir, "tts_server.py")
-
-    print("[podcast] TTS server not running, starting it...")
-    import subprocess
-    subprocess.run([sys.executable, server_script, "--daemon"], check=True)
-
-    # Wait for socket to appear
-    import time
-    for _ in range(30):
-        if os.path.exists(SOCKET_PATH):
-            return
-        time.sleep(1)
-    print("[podcast] Error: TTS server did not start in time.", file=sys.stderr)
-    sys.exit(1)
-
-
-def synthesize(text: str, voice: str, speed: float) -> bytes:
-    """Send text to the TTS server and collect all audio chunks as raw float32 bytes."""
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.connect(SOCKET_PATH)
-
-    request = json.dumps({"text": text, "voice": voice, "speed": speed}).encode()
-    sock.sendall(request)
-    sock.shutdown(socket.SHUT_WR)  # Signal end of request
-
-    audio_data = b""
-    while True:
-        header = _recv_exactly(sock, 4)
-        if header is None:
-            break
-        length = struct.unpack("!I", header)[0]
-        if length == 0:
-            break
-        chunk = _recv_exactly(sock, length)
-        if chunk is None:
-            break
-        audio_data += chunk
-
-    sock.close()
-    return audio_data
-
-
-def _recv_exactly(sock, n: int) -> bytes | None:
-    """Receive exactly n bytes from socket."""
-    data = b""
-    while len(data) < n:
-        chunk = sock.recv(n - len(data))
-        if not chunk:
-            return None
-        data += chunk
-    return data
+def synthesize(ep: Endpoint, text: str, voice: str, speed: float) -> bytes:
+    """Collect all audio for ``text`` as raw little-endian float32 bytes."""
+    return b"".join(client.stream_audio(ep, text, voice, speed))
 
 
 def float32_to_int16(raw: bytes) -> bytes:
-    """Convert float32 audio to int16 for WAV output."""
-    import array
+    """Convert little-endian float32 audio to int16 for WAV output."""
     floats = array.array("f", raw)
+    if sys.byteorder == "big":
+        floats.byteswap()
     samples = array.array("h", (int(max(-1.0, min(1.0, s)) * 32767) for s in floats))
+    if sys.byteorder == "big":
+        samples.byteswap()
     return samples.tobytes()
 
 
 def generate_silence(seconds: float) -> bytes:
     """Generate silence as int16 bytes."""
-    import array
-    n_samples = int(SAMPLE_RATE * seconds)
-    silence = array.array("h", [0] * n_samples)
-    return silence.tobytes()
+    return bytes(2 * int(SAMPLE_RATE * seconds))
 
 
 def main():
+    """Build the podcast WAV from a plan file given on the command line."""
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <plan.json> [output.wav]", file=sys.stderr)
         sys.exit(1)
@@ -126,7 +76,7 @@ def main():
     default_name = f"{title.replace(' ', '-').lower()}-podcast.wav"
     output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.getcwd(), default_name)
 
-    ensure_tts_server()
+    ep = client.ensure_server()
 
     silence = generate_silence(PAUSE_SECONDS)
     all_audio = b""
@@ -139,7 +89,7 @@ def main():
         seg_title = seg.get("title", f"Segment {seg.get('id', i + 1)}")
         print(f"[podcast] ({i + 1}/{len(segments)}) {seg_title}")
 
-        raw = synthesize(tts_text, voice, speed)
+        raw = synthesize(ep, tts_text, voice, speed)
         if raw:
             all_audio += float32_to_int16(raw)
             all_audio += silence
@@ -158,4 +108,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (RuntimeError, OSError) as exc:
+        print(f"[podcast] Error: {exc}", file=sys.stderr)
+        sys.exit(1)

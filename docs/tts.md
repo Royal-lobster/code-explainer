@@ -2,9 +2,18 @@
 
 ## Engine
 
-**Kokoro-82M** via mlx-audio — top-ranked open-source TTS, runs locally on Apple Silicon. Configurable via `TTS_MODEL` env var.
+**Kokoro-82M**, run locally through a pluggable backend chosen at startup:
 
-Persistent server (`tts_server.py`) loads model once. First call ~5s (model load), subsequent ~450ms (streaming). Starts automatically on first TTS call. Falls back to macOS `say` if mlx-audio not installed.
+| `TTS_BACKEND` | Engine | Used by default on |
+|---|---|---|
+| `auto` (default) | best available | - |
+| `mlx` | mlx-audio (GPU) | Apple Silicon Macs |
+| `torch` | kokoro + PyTorch (CUDA if available, else CPU) | Linux, Intel Macs, Apple Silicon without mlx-audio |
+| `fake` | test tone, no model | tests and diagnostics |
+
+`TTS_MODEL` overrides the backend's model id (defaults: `prince-canuma/Kokoro-82M` for mlx, `hexgrad/Kokoro-82M` for torch).
+
+A persistent server (`tts_server.py`) loads the model once and listens on a random localhost port, advertised with an access token in `~/.code-explainer/run/tts-server.json`. First call ~5s (model load), later calls stream within about half a second on GPU. It starts automatically on the first TTS call, stops after `TTS_IDLE_TIMEOUT` seconds idle (default 300), and can be stopped with `tts_server.py --stop`. If no engine is installed, walkthroughs run without voice. The log is `~/.code-explainer/run/tts-server.log`.
 
 ## Behavior
 

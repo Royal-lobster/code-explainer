@@ -2,6 +2,10 @@
   <img src="vscode-extension/media/icon.png" width="120" height="120" alt="Code Explainer icon" />
 </p>
 
+<!-- yarkr:badges:start -->
+[![Indexed on Yarkr](https://api.yarkr.com/functions/v1/api/api/v1/badges/repos/Royal-lobster/code-explainer/version.svg)](https://yarkr.com/arks/royal-lobster/code-explainer)
+<!-- yarkr:badges:end -->
+
 <h1 align="center">Code Explainer</h1>
 
 <p align="center">
@@ -310,3 +314,35 @@ code-explainer/
 ## 📄 License
 
 MIT
+
+<!-- yarkr:install:start -->
+## Install with Yarkr
+
+This repo is indexed on [Yarkr](https://yarkr.com/arks/royal-lobster/code-explainer) as the ark [royal-lobster/code-explainer](https://yarkr.com/arks/royal-lobster/code-explainer), so its skills install into Claude Code, Codex, Cursor and other agent harnesses with one command.
+
+### CLI
+
+Install the whole ark, which Yarkr keeps equal to this repo:
+
+```bash
+npx yarkr-cli sync royal-lobster/code-explainer
+```
+
+Or add individual skills:
+
+```bash
+npx yarkr-cli add skill:royal-lobster/code-explainer/explainer
+```
+
+No Node.js? `curl -fsSL https://yarkr.com/install.sh | sh` (macOS, Linux) or `irm https://yarkr.com/install.ps1 | iex` (Windows PowerShell) installs `yarkr` as a standalone binary; then type `yarkr` in place of `npx yarkr-cli`.
+
+### MCP
+
+Connect your agent to the ark over MCP:
+
+```bash
+npx yarkr-cli mcp add royal-lobster/code-explainer
+```
+
+Or point any MCP client at `https://api.yarkr.com/functions/v1/api/mcp/o/royal-lobster/code-explainer`.
+<!-- yarkr:install:end -->
